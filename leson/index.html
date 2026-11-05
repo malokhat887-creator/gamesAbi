@@ -1,0 +1,2495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Игры Абдуллы</title>
+<style>
+    html, body {
+        margin: 0; min-height: 100%;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: linear-gradient(160deg, #10141c 0%, #1a2230 100%);
+        color: #fff; font-family: Arial, sans-serif;
+    }
+    .hidden { display: none !important; }
+    h1 { margin: 0 0 4px 0; text-shadow: 2px 2px 4px #000; letter-spacing: 2px; }
+
+    .back-btn {
+        position: fixed; top: 10px; left: 10px; z-index: 30;
+        padding: 6px 14px; background: #35353d; color: #fff;
+        border: 2px solid #55555e; border-radius: 8px; cursor: pointer;
+    }
+    .back-btn:hover { background: #45454e; }
+
+    .music-bar {
+        position: fixed; top: 10px; right: 10px; z-index: 40;
+        display: flex; gap: 6px;
+    }
+    .music-bar .btn { padding: 6px 12px; font-size: 13px; }
+
+    #timer { font-family: Consolas, monospace; font-size: 18px; color: #ffd166; margin-bottom: 8px; }
+    #snakeInfo, #spaceInfo { font-family: Consolas, monospace; font-size: 18px; margin-bottom: 10px; }
+    #snakeInfo { color: #9ee3a2; }
+    #spaceInfo { color: #9ecbff; }
+
+    canvas {
+        border: 4px solid #303638; border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.6);
+        image-rendering: pixelated; touch-action: none;
+    }
+    #dinoCanvas { background: rgba(126,194,235,0.35); }
+    #snakeCanvas { background: #0d1117; border-color: #2f3b2f; box-shadow: 0 0 24px rgba(126,217,87,0.25); }
+    #spaceCanvas { background: #050510; border-color: #2a2f45; box-shadow: 0 0 24px rgba(120,140,255,0.25); }
+
+    .overlay { position: fixed; inset: 0; background: rgba(15,15,20,0.94);
+        display: flex; align-items: center; justify-content: center; z-index: 10; }
+    .panel { background: #232329; border: 2px solid #44444a; border-radius: 14px;
+        padding: 22px 28px; max-width: 520px; width: 92%; max-height: 90vh;
+        overflow-y: auto; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.7); }
+    .panel h2 { margin: 0 0 4px 0; letter-spacing: 1px; }
+    .stats { font-family: Consolas, monospace; color: #ffd166; margin-bottom: 14px; }
+
+    .game-btn {
+        display: block; width: 100%; margin: 10px 0; padding: 20px;
+        font-size: 22px; font-weight: bold; letter-spacing: 1px;
+        background: linear-gradient(135deg, #35353d, #2a2a31);
+        color: #fff; border: 3px solid #55555e; border-radius: 14px; cursor: pointer;
+        transition: transform 0.12s ease;
+    }
+    .game-btn:hover { transform: scale(1.03); border-color: #ffd166; }
+
+    .skin-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .skin-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+        background: #2a2a31; border: 2px solid #3c3c44; border-radius: 10px; }
+    .skin-row.owned { border-color: #4f6f52; }
+    .skin-row.selected { border-color: #ffd166; }
+    .skin-swatch { width: 24px; height: 24px; border-radius: 5px; border: 1px solid #666; flex-shrink: 0; }
+    .skin-name { flex-grow: 1; text-align: left; }
+    .skin-price { font-family: Consolas, monospace; color: #ffd166; font-size: 13px; }
+
+    .btn { padding: 6px 14px; background: #35353d; color: #fff;
+        border: 2px solid #55555e; border-radius: 8px; cursor: pointer; font-size: 13px; }
+    .btn:hover { background: #45454e; }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn.primary { background: #ffd166; color: #1a1a1d; border-color: #ffd166;
+        font-weight: bold; font-size: 16px; padding: 10px 30px; }
+    .btn.primary:hover { background: #ffe08a; }
+    .btn.buy { border-color: #7bc47f; color: #9ee3a2; }
+    .btn.select { border-color: #7aa7ff; color: #a9c6ff; }
+
+    .big-play-btn {
+        width: 120px; height: 120px; margin: 20px auto 14px;
+        background: linear-gradient(135deg, #ffd166, #e5a833);
+        border: 4px solid #fff; border-radius: 20px; font-size: 52px; color: #1a1a1d;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        transition: transform 0.15s ease; box-shadow: 0 10px 25px rgba(255,209,102,0.35);
+    }
+    .big-play-btn:hover { transform: scale(1.06); }
+    .big-play-btn:active { transform: scale(0.94); }
+
+    .result { font-family: Consolas, monospace; font-size: 18px; margin-bottom: 6px; }
+    .coins-earned { font-family: Consolas, monospace; color: #9ee3a2;
+        margin-bottom: 16px; white-space: pre-line; }
+
+    .controls { display: grid; grid-template-columns: repeat(3, 56px);
+        grid-template-rows: repeat(2, 48px); gap: 6px; margin-top: 14px; }
+    .ctl-btn { background: #2a3a2e; color: #cdeec9; border: 2px solid #3f5c43;
+        border-radius: 10px; font-size: 20px; cursor: pointer; }
+    .ctl-btn:hover { background: #35503a; }
+
+    .donate-btn {
+        display: inline-block; margin-top: 12px; padding: 10px 22px;
+        background: linear-gradient(135deg, #a86ef5, #7b3ff2);
+        color: #fff; text-decoration: none; font-weight: bold; font-family: inherit;
+        border: 2px solid #c9a4ff; border-radius: 10px; font-size: 15px; cursor: pointer;
+    }
+    .donate-btn:hover { filter: brightness(1.15); }
+    .donate-btn.small { padding: 8px 16px; font-size: 14px; margin-top: 6px;
+        text-decoration: none; display: inline-block; }
+
+    .tg-btn {
+        display: block; width: 100%; margin-top: 10px; padding: 12px;
+        background: linear-gradient(135deg, #2aabee, #1c86c9);
+        color: #fff; text-decoration: none; font-weight: bold;
+        border-radius: 10px; font-size: 15px;
+    }
+    .tg-btn:hover { filter: brightness(1.15); }
+
+    .donate-panel { max-width: 560px; }
+    .donate-note { font-size: 14px; color: #c9c9d4; margin: 6px 0 14px; }
+    .donate-cards { display: flex; gap: 12px; justify-content: center;
+        flex-wrap: wrap; margin-bottom: 16px; }
+    .donate-card { background: linear-gradient(160deg, #2c2140, #241a33);
+        border: 2px solid #7b3ff2; border-radius: 14px; padding: 14px 18px;
+        min-width: 150px; transition: transform 0.15s ease; }
+    .donate-card:hover { transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(123,63,242,0.35); }
+    .donate-price { font-size: 22px; font-weight: bold; color: #fff; }
+    .donate-coins { color: #ffd166; font-family: Consolas, monospace;
+        margin: 6px 0; font-size: 14px; }
+
+    .promo-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+    .promo-row input { padding: 9px 12px; background: #1a1a20; color: #fff;
+        border: 2px solid #44444a; border-radius: 8px; font-size: 14px; width: 210px;
+        font-family: Consolas, monospace; }
+    .promo-row input:focus { outline: none; border-color: #a86ef5; }
+    .donate-hint { font-size: 12px; color: #8f8f9c; margin: 4px 0 14px; }
+    .promo-msg { font-size: 14px; min-height: 20px; margin-bottom: 10px; }
+    .promo-msg.ok { color: #9ee3a2; }
+    .promo-msg.err { color: #ff7b6d; }
+
+    .row-btns { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+
+    #volSlider { width: 240px; margin: 10px 0; accent-color: #ffd166; }
+    .music-status { font-size: 12px; color: #8f8f9c; margin: 8px 0 14px; min-height: 16px; }
+</style>
+</head>
+<body>
+
+<button class="back-btn hidden" id="backBtn">⬅ Меню</button>
+
+<div class="music-bar">
+    <button class="btn" id="musicToggle">▶ Музыка</button>
+    <button class="btn" id="musicSettingsBtn">⚙ Настройки</button>
+</div>
+
+<div id="musicSettings" class="overlay hidden">
+    <div class="panel">
+        <h2>🎵 МУЗЫКА</h2>
+        <div class="skin-list" id="trackList"></div>
+        <div class="stats">Громкость: <span id="volLabel">50</span>%</div>
+        <input type="range" id="volSlider" min="0" max="100" value="50">
+        <div class="music-status" id="musicStatus"></div>
+        <button class="btn primary" id="musicSettingsClose">ГОТОВО</button>
+    </div>
+</div>
+
+<div id="menuScreen" class="overlay">
+    <div class="panel" style="max-width: 420px;">
+        <h2>🎮 ИГРЫ АБДУЛЛЫ</h2>
+        <p>Выбери игру:</p>
+        <button class="game-btn" id="btnDino">🦖 ДИНОЗАВРИК</button>
+        <button class="game-btn" id="btnSnake">🐍 ЗМЕЙКА</button>
+        <button class="game-btn" id="btnSpace">🚀 КОСМИЧЕСКИЙ СБОРЩИК</button>
+        <button class="donate-btn" id="donateOpenMenu" style="width:100%;">💜 Донат — получить монеты</button>
+        <a class="tg-btn" href="https://t.me/HabibiRUSS" target="_blank" rel="noopener">📢 Мой Telegram-канал</a>
+    </div>
+</div>
+
+<div id="dinoWrap" class="hidden">
+    <h1>Игра Абдуллы</h1>
+    <div id="timer">Время: 0:00</div>
+    <canvas id="dinoCanvas" width="900" height="360"></canvas>
+
+    <div id="startScreen" class="overlay">
+        <div class="panel" style="max-width: 420px;">
+            <h2 style="margin-top:0;">Игра Абдуллы</h2>
+            <p>Локации меняются каждые 30 секунд, в каждой свои препятствия!</p>
+            <p>Боссы: мышь зовёт мышей, демон будит вулканы. Когда «!» — прыгай или уклоняйся стрелками ← →!</p>
+            <button class="big-play-btn" id="bigPlayBtn">▶</button>
+            <button class="btn" id="toLobbyBtn" style="width:100%;">Скины и статистика</button>
+            <button class="donate-btn" id="donateOpenStart" style="width:100%;">💜 Донат — получить монеты</button>
+            <a class="tg-btn" href="https://t.me/HabibiRUSS" target="_blank" rel="noopener">📢 Мой Telegram-канал</a>
+        </div>
+    </div>
+
+    <div id="lobby" class="overlay hidden">
+        <div class="panel">
+            <h2>🎮 ЛОББИ</h2>
+            <div class="stats" id="lobbyStats"></div>
+            <div class="skin-list" id="skinList"></div>
+            <button class="btn primary" id="playBtn">ИГРАТЬ</button>
+            <button class="donate-btn" id="donateOpenLobby" style="width:100%;">💜 Донат — получить монеты</button>
+            <a class="tg-btn" href="https://t.me/HabibiRUSS" target="_blank" rel="noopener">📢 Мой Telegram-канал</a>
+        </div>
+    </div>
+
+    <div id="overPanel" class="overlay hidden">
+        <div class="panel">
+            <h2>ИГРА ОКОНЧЕНА</h2>
+            <div class="result" id="overStats"></div>
+            <div class="coins-earned" id="overCoins"></div>
+            <button class="btn primary" id="againBtn">ИГРАТЬ СНОВА</button>
+            <br><br>
+            <button class="btn" id="lobbyBtn">В ЛОББИ</button>
+        </div>
+    </div>
+</div>
+
+<div id="snakeWrap" class="hidden">
+    <h1>Змейка Абдуллы</h1>
+    <div id="snakeInfo">Очки: 0  •  Рекорд: 0</div>
+    <canvas id="snakeCanvas" width="480" height="480"></canvas>
+
+    <button class="btn" id="snakeShopBtn" style="margin-top:12px;">🎨 Скины змейки</button>
+
+    <div class="controls">
+        <span></span>
+        <button class="ctl-btn" data-dir="up">▲</button>
+        <span></span>
+        <button class="ctl-btn" data-dir="left">◀</button>
+        <button class="ctl-btn" data-dir="down">▼</button>
+        <button class="ctl-btn" data-dir="right">▶</button>
+    </div>
+
+    <div id="snakeOverPanel" class="overlay hidden">
+        <div class="panel">
+            <h2>🍎 ИГРА ОКОНЧЕНА</h2>
+            <div class="coins-earned" id="snakeOverStats"></div>
+            <button class="btn primary" id="snakeAgainBtn">ИГРАТЬ СНОВА</button>
+        </div>
+    </div>
+</div>
+
+<div id="snakeShop" class="overlay hidden">
+    <div class="panel">
+        <h2>🐍 СКИНЫ ЗМЕЙКИ</h2>
+        <div class="stats" id="snakeShopStats"></div>
+        <div class="skin-list" id="snakeSkinList"></div>
+        <button class="btn primary" id="snakeShopClose">ЗАКРЫТЬ</button>
+    </div>
+</div>
+
+<div id="spaceWrap" class="hidden">
+    <h1>Космический сборщик</h1>
+    <div id="spaceInfo">Очки: 0  •  Рекорд: 0  •  Смертей: 0</div>
+    <canvas id="spaceCanvas" width="800" height="600"></canvas>
+    <div class="row-btns">
+        <button class="btn primary" id="spaceStartBtn">▶ СТАРТ</button>
+        <button class="btn" id="spaceShopBtn">🚀 Скины корабля</button>
+    </div>
+    <p style="font-size:13px; color:#8f8f9c;">↑ ↓ — манёвр, собирай кристаллы, уворачивайся от астероидов!</p>
+</div>
+
+<div id="spaceOverPanel" class="overlay hidden">
+    <div class="panel">
+        <h2>💥 КОРАБЛЬ ПОДБИТ</h2>
+        <div class="coins-earned" id="spaceOverStats"></div>
+        <button class="btn primary" id="spaceAgainBtn">ИГРАТЬ СНОВА</button>
+    </div>
+</div>
+
+<div id="spaceShop" class="overlay hidden">
+    <div class="panel">
+        <h2>🚀 СКИНЫ КОРАБЛЯ</h2>
+        <div class="stats" id="spaceShopStats"></div>
+        <div class="skin-list" id="spaceSkinList"></div>
+        <button class="btn primary" id="spaceShopClose">ЗАКРЫТЬ</button>
+    </div>
+</div>
+
+<div id="donateModal" class="overlay hidden">
+    <div class="panel donate-panel">
+        <h2>💜 Поддержать игру</h2>
+        <p class="donate-note">Все донаты идут на развитие «Игр Абдуллы». Оплати переводом по ссылке — и получи монеты в игре!</p>
+        <div class="donate-cards">
+            <div class="donate-card">
+                <div class="donate-price">100 ₽</div>
+                <div class="donate-coins">🪙 +1000 монет</div>
+                <a class="donate-btn small" href="https://yoomoney.ru/fundraise/1LBVRAHMAQ5.261105" target="_blank" rel="noopener">Оплатить</a>
+            </div>
+            <div class="donate-card">
+                <div class="donate-price">300 ₽</div>
+                <div class="donate-coins">🪙 +5000 монет</div>
+                <a class="donate-btn small" href="https://yoomoney.ru/fundraise/1LBVRAHMAQ5.261105" target="_blank" rel="noopener">Оплатить</a>
+            </div>
+            <div class="donate-card">
+                <div class="donate-price">500 ₽</div>
+                <div class="donate-coins">🪙 +100000 монет</div>
+                <a class="donate-btn small" href="https://yoomoney.ru/fundraise/1LBVRAHMAQ5.261105" target="_blank" rel="noopener">Оплатить</a>
+            </div>
+        </div>
+        <div class="promo-row">
+            <input id="promoInput" placeholder="Код из перевода" maxlength="24">
+            <button class="btn primary" id="promoBtn">Получить</button>
+        </div>
+        <div class="promo-msg" id="promoMsg"></div>
+        <p class="donate-hint">После оплаты скажи разработчику сумму перевода — он выдаст код. Каждый код работает один раз.</p>
+        <button class="btn" id="donateClose">Закрыть</button>
+    </div>
+</div>
+
+<script>
+(() => {
+    "use strict";
+
+    const random = (min, max) => min + Math.floor(Math.random() * (max - min));
+    const mixRGB = (a, b, t) => "rgb(" + Math.round(a[0] + (b[0]-a[0])*t) + ", " +
+        Math.round(a[1] + (b[1]-a[1])*t) + ", " + Math.round(a[2] + (b[2]-a[2])*t) + ")";
+
+    // ══════════════════════ МУЗЫКА ══════════════════════
+    const TRACKS = [
+        { name: "Pigstep",            file: "music/pigstep.mp3" },
+        { name: "Stal",               file: "music/stal.mp3" },
+        { name: "Minecraft (Calm 1)", file: "music/minecraft_calm1.mp3" },
+        { name: "Sweden",             file: "music/sweden.mp3" }
+    ];
+
+    let musicVolume = 50, musicTrack = 0, musicOn = false;
+    try {
+        const savedVol = parseInt(localStorage.getItem("musicVolume"), 10);
+        if (!isNaN(savedVol)) musicVolume = Math.max(0, Math.min(100, savedVol));
+        const savedTrack = parseInt(localStorage.getItem("musicTrack"), 10);
+        if (!isNaN(savedTrack) && savedTrack >= 0 && savedTrack < TRACKS.length) musicTrack = savedTrack;
+        musicOn = localStorage.getItem("musicOn") === "1";
+    } catch (e) {}
+
+    const musicAudio = new Audio();
+    musicAudio.loop = true;
+    musicAudio.volume = musicVolume / 100;
+    musicAudio.src = TRACKS[musicTrack].file;
+
+    const musicToggle = document.getElementById("musicToggle");
+    const musicSettings = document.getElementById("musicSettings");
+    const trackList = document.getElementById("trackList");
+    const volSlider = document.getElementById("volSlider");
+    const volLabel = document.getElementById("volLabel");
+    const musicStatus = document.getElementById("musicStatus");
+
+    musicAudio.addEventListener("error", () => {
+        musicStatus.textContent = "⚠ Файл «" + TRACKS[musicTrack].file +
+            "» не найден. Создай папку music рядом с index.html и положи туда mp3.";
+    });
+    musicAudio.addEventListener("playing", () => {
+        musicStatus.textContent = "Сейчас играет: " + TRACKS[musicTrack].name;
+    });
+
+    function tryPlayMusic() {
+        if (!musicOn) return;
+        musicAudio.play().catch(() => {});
+    }
+    function firstInteraction() {
+        tryPlayMusic();
+        document.removeEventListener("pointerdown", firstInteraction);
+        document.removeEventListener("keydown", firstInteraction);
+    }
+    document.addEventListener("pointerdown", firstInteraction);
+    document.addEventListener("keydown", firstInteraction);
+
+    function setMusicOn(v) {
+        musicOn = v;
+        try { localStorage.setItem("musicOn", v ? "1" : "0"); } catch (e) {}
+        if (v) tryPlayMusic(); else musicAudio.pause();
+        renderMusicUI();
+    }
+    function selectTrack(i) {
+        musicTrack = i;
+        try { localStorage.setItem("musicTrack", String(i)); } catch (e) {}
+        musicAudio.src = TRACKS[i].file;
+        if (musicOn) tryPlayMusic();
+        renderMusicUI();
+        musicStatus.textContent = musicOn ? "Сейчас играет: " + TRACKS[i].name : "Музыка выключена";
+    }
+
+    function renderMusicUI() {
+        musicToggle.textContent = musicOn ? "⏸ Пауза" : "▶ Музыка";
+        volSlider.value = musicVolume;
+        volLabel.textContent = musicVolume;
+        trackList.innerHTML = "";
+        TRACKS.forEach((t, i) => {
+            const row = document.createElement("div");
+            row.className = "skin-row" + (i === musicTrack ? " selected" : "");
+            const name = document.createElement("span");
+            name.className = "skin-name";
+            name.textContent = t.name;
+            row.appendChild(name);
+            const btn = document.createElement("button");
+            if (i === musicTrack) {
+                btn.className = "btn"; btn.textContent = "Играет"; btn.disabled = true;
+            } else {
+                btn.className = "btn select"; btn.textContent = "Включить";
+                btn.addEventListener("click", () => selectTrack(i));
+            }
+            row.appendChild(btn);
+            trackList.appendChild(row);
+        });
+    }
+
+    musicToggle.addEventListener("click", () => setMusicOn(!musicOn));
+    document.getElementById("musicSettingsBtn").addEventListener("click", () => {
+        renderMusicUI();
+        musicStatus.textContent = musicOn ? "Сейчас играет: " + TRACKS[musicTrack].name : "Музыка выключена";
+        musicSettings.classList.remove("hidden");
+    });
+    document.getElementById("musicSettingsClose").addEventListener("click", () => {
+        musicSettings.classList.add("hidden");
+    });
+    volSlider.addEventListener("input", () => {
+        musicVolume = parseInt(volSlider.value, 10);
+        volLabel.textContent = musicVolume;
+        musicAudio.volume = musicVolume / 100;
+        try { localStorage.setItem("musicVolume", String(musicVolume)); } catch (e) {}
+    });
+
+    // ══════════════════════ ОБЩАЯ ЭКОНОМИКА ══════════════════════
+    let coins = 0;
+    try { coins = parseInt(localStorage.getItem("dinoCoins"), 10) || 0; } catch (e) {}
+
+    const lobbyStats = document.getElementById("lobbyStats");
+    const snakeShopStats = document.getElementById("snakeShopStats");
+    const spaceShopStats = document.getElementById("spaceShopStats");
+
+    function updateCoinsUI() {
+        try { localStorage.setItem("dinoCoins", String(coins)); } catch (e) {}
+        lobbyStats.textContent = "Монеты: " + coins + "  •  Рекорд: " + highScore +
+            "  •  Смертей: " + deathsDino;
+        snakeShopStats.textContent = "Монеты: " + coins + "  •  Смертей: " + sDeaths;
+        spaceShopStats.textContent = "Монеты: " + coins + "  •  Рекорд: " + spaceHigh +
+            "  •  Смертей: " + spaceDeaths;
+    }
+
+    // ══════════════════════ МЕНЮ ══════════════════════
+    const menuScreen = document.getElementById("menuScreen");
+    const dinoWrap = document.getElementById("dinoWrap");
+    const snakeWrap = document.getElementById("snakeWrap");
+    const spaceWrap = document.getElementById("spaceWrap");
+    const backBtn = document.getElementById("backBtn");
+    let currentGame = null;
+
+    function showMenu() {
+        currentGame = null;
+        menuScreen.classList.remove("hidden");
+        dinoWrap.classList.add("hidden");
+        snakeWrap.classList.add("hidden");
+        spaceWrap.classList.add("hidden");
+        backBtn.classList.add("hidden");
+        snakeShop.classList.add("hidden");
+        spaceShop.classList.add("hidden");
+        spaceOverPanel.classList.add("hidden");
+        updateCoinsUI();
+    }
+    function openDino() {
+        currentGame = "dino";
+        menuScreen.classList.add("hidden");
+        snakeWrap.classList.add("hidden");
+        spaceWrap.classList.add("hidden");
+        dinoWrap.classList.remove("hidden");
+        backBtn.classList.remove("hidden");
+        showStart();
+    }
+    function openSnake() {
+        currentGame = "snake";
+        menuScreen.classList.add("hidden");
+        dinoWrap.classList.add("hidden");
+        spaceWrap.classList.add("hidden");
+        snakeWrap.classList.remove("hidden");
+        backBtn.classList.remove("hidden");
+        sReset();
+    }
+    function openSpace() {
+        currentGame = "space";
+        menuScreen.classList.add("hidden");
+        dinoWrap.classList.add("hidden");
+        snakeWrap.classList.add("hidden");
+        spaceWrap.classList.remove("hidden");
+        backBtn.classList.remove("hidden");
+        spaceReset();
+    }
+    document.getElementById("btnDino").addEventListener("click", openDino);
+    document.getElementById("btnSnake").addEventListener("click", openSnake);
+    document.getElementById("btnSpace").addEventListener("click", openSpace);
+    backBtn.addEventListener("click", showMenu);
+
+    // ══════════════════════ ДОНАТ ══════════════════════
+    const PROMO_CODES = {
+        "DONATE100": 1000,
+        "DONATE300": 3500,
+        "DONATE500": 7000
+    };
+    const donateModal = document.getElementById("donateModal");
+    const promoInput = document.getElementById("promoInput");
+    const promoMsg = document.getElementById("promoMsg");
+
+    let redeemedCodes = [];
+    try { redeemedCodes = JSON.parse(localStorage.getItem("dinoPromos") || "[]"); }
+    catch (e) { redeemedCodes = []; }
+    if (!Array.isArray(redeemedCodes)) redeemedCodes = [];
+
+    function openDonate() {
+        donateModal.classList.remove("hidden");
+        promoMsg.textContent = "";
+        promoMsg.className = "promo-msg";
+        promoInput.value = "";
+    }
+    function closeDonate() {
+        donateModal.classList.add("hidden");
+    }
+    function applyPromo() {
+        const val = promoInput.value.trim().toUpperCase();
+        if (!val) return;
+        if (!PROMO_CODES[val]) {
+            promoMsg.textContent = "Неверный код. Проверь написание!";
+            promoMsg.className = "promo-msg err";
+            return;
+        }
+        if (redeemedCodes.includes(val)) {
+            promoMsg.textContent = "Этот код уже использован 🙈";
+            promoMsg.className = "promo-msg err";
+            return;
+        }
+        coins += PROMO_CODES[val];
+        redeemedCodes.push(val);
+        try { localStorage.setItem("dinoPromos", JSON.stringify(redeemedCodes)); } catch (e) {}
+        updateCoinsUI();
+        promoMsg.textContent = "Готово! +" + PROMO_CODES[val] + " монет 🪙 Всего: " + coins;
+        promoMsg.className = "promo-msg ok";
+        promoInput.value = "";
+        renderLobby();
+    }
+    document.getElementById("donateOpenMenu").addEventListener("click", openDonate);
+    document.getElementById("donateOpenStart").addEventListener("click", openDonate);
+    document.getElementById("donateOpenLobby").addEventListener("click", openDonate);
+    document.getElementById("donateClose").addEventListener("click", closeDonate);
+    document.getElementById("promoBtn").addEventListener("click", applyPromo);
+    promoInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") applyPromo();
+    });
+
+    // ══════════════════════ ЛОКАЦИИ ══════════════════════
+    const LocInterval = 30, LocTransition = 1.8;
+
+    const LOCATIONS = [
+        { name: "☀️ AAAAAAAAAAAAAAAAAAAAAAA",  sky:[126,194,235], ground:[48,54,56], cactus:[40,145,72],
+          cloud:[245,250,252], ui:[50,60,65], sun:true, stars:false, bats:false,
+          decor:null, obstacle:"cactus" },
+        { name: "🌙 снова день снова ночь мысли прочь в эту ночь",  sky:[20,24,48], ground:[200,205,214], cactus:[60,170,110],
+          cloud:[70,78,110], ui:[220,226,235], sun:false, stars:true, bats:true,
+          decor:null, obstacle:"cactus" },
+        { name: "🔥 ААААД",    sky:[60,8,6], ground:[70,15,12], cactus:[150,40,25],
+          cloud:[180,50,25], ui:[255,150,110], sun:false, stars:false, bats:false,
+          decor:"hell", obstacle:"spike" },
+        { name: "🏙 китай город", sky:[110,140,180], ground:[40,42,46], cactus:[70,150,80],
+          cloud:[200,210,225], ui:[40,45,55], sun:false, stars:false, bats:false,
+          decor:"city", obstacle:"car" },
+        { name: "⛰ ГОРЫ",   sky:[150,200,235], ground:[60,72,62], cactus:[50,140,90],
+          cloud:[250,252,255], ui:[50,60,65], sun:false, stars:false, bats:false,
+          decor:"mountains", obstacle:"tree" }
+    ];
+
+    // ══════════════════════ СПРАЙТЫ ══════════════════════
+    const DINO_RUN_A = [
+        "........................","..................11111.",".................1111111",
+        ".................11w1111",".................1111111","1111............1111111.",
+        "111111.........11111111.",".111111111111111111111..","..111111111111111111111.",
+        "....1111111111111111111.","......11111111111111111.","........11111111111111..",
+        "..........1111111111....","...........11111111.....","...........11111111.....",
+        "...........1111.111.....","..........1111..111.....","..........111....11.....",
+        ".........111....111.....",".........11......11.....","........111......11.....",
+        "........111.....111.....","........................","........................"];
+    const DINO_RUN_B = [
+        "........................","..................11111.",".................1111111",
+        ".................11w1111",".................1111111","1111............1111111.",
+        "111111.........11111111.",".111111111111111111111..","..111111111111111111111.",
+        "....1111111111111111111111111111111.","......11111111111111111.","........11111111111111..",
+        "..........1111111111....","...........11111111.....","..........111111111.....",
+        ".........11111..111.....","........1111....111.....","........111......11.....",
+        ".......111.......11.....",".......11.......111.....","......111.......111.....",
+        "......111......111......","........................","........................"];
+    const DINO_JUMP = [
+        "........................","..................11111.",".................1111111",
+        ".................11w1111",".................1111111","1111............1111111.",
+        "111111.........11111111.",".111111111111111111111..","..111111111111111111111.",
+        "....1111111111111111111.","......11111111111111111.","........11111111111111..",
+        "..........1111111111....","...........11111111.....","..........1111111111....",
+        ".........11111..11111...","........11111....1111...",".......1111......111....",
+        ".......111.......11.....","......111........11.....","......11.........11.....",
+        ".....111.........111....","........................","........................"];
+
+    const SPIDER_A = [
+        "........................","..........111111........",".........11111111.......",
+        ".........1w1111w1.......",".........11111111.......","..........111111........",
+        "......11..111111..11....",".....1111.111111.1111...",".....111111222211111....",
+        "......11112222221111....","......11112kkkk2111.....","......11111222221111....",
+        ".......111122221111.....",".......111111111111.....","........1111111111......",
+        "........2222222222......","........2222222222......","........222....222......",
+        "........222....222......",".......222......222.....",".......222......222.....",
+        "......222........222....",".....1111........1111...","........................"];
+    const SPIDER_B = [
+        "........................","..........111111........",".........11111111.......",
+        ".........1w1111w1.......",".........11111111.......","..........111111........",
+        "......11..111111..11....",".....1111.111111.1111...",".....111111222211111....",
+        "......11112222221111....","......11112kkkk2111.....","......11111222221111....",
+        ".......111122221111.....",".......111111111111.....","........1111111111......",
+        "........2222222222......",".......22222222222......",".......222......222.....",
+        "......222........222....","......222.........222...",".....222...........222..",
+        ".....22.............22..","....1111..........1111..","........................"];
+    const SPIDER_JUMP = [
+        "........................","..........111111........",".........11111111.......",
+        ".........1w1111w1.......",".........11111111.......","..........111111........",
+        ".....11...111111...11...","....1111.1111111.1111...","....11111112222111111...",
+        ".....111112kkkk21111....",".....111112222221111....",".....11111222222111.....",
+        "......1111222221111.....",".......111111111111.....","........1111111111......",
+        ".......222222222222.....","......22222....22222....",".....2222......2222.....",
+        "....2222........2222....","....222..........222....","...1111..........1111...",
+        "...111............111...","........................","........................"];
+
+    const HUMAN_A = [
+        "........................","..........444444........",".........44444444.......",
+        ".........43333333.......",".........33333333.......",".........33w33w33.......",
+        "..........333333........",".....3....111111....3...","....33...11111111...33..",
+        "....333..11111111..333..",".....33..11111111..33...",".........11111111.......",
+        ".........11111111.......","..........222222222222222........","..........222222........",
+        "..........222222........","..........222..222......","..........222...222.....",
+        ".........222....222.....",".........222.....222....","........222......222....",
+        "........22........22....",".......kkk........kkk...","........................"];
+    const HUMAN_B = [
+        "........................","..........444444........",".........44444444.......",
+        ".........43333333.......",".........33333333.......",".........33w33w33.......",
+        "..........333333........",".....3....111111....3...","....33...11111111...33..",
+        "....333..11111111..333..",".....33..11111111..33...",".........11111111.......",
+        ".........11111111.......","..........222222........",".........2222222........",
+        "........2222222.........","........222...222.......",".......222.....222......",
+        "......222.......222.....",".....222.........222....","....222...........222...",
+        "...22...............22..","..kkk...............kkk.","........................"];
+    const HUMAN_JUMP = [
+        "........................","..........444444........",".........44444444.......",
+        ".........43333333.......",".........33333333.......",".........33w33w33.......",
+        "..........333333........",".....3....111111....3...","....33...11111111...33..",
+        "....333..11111111..333..",".....33..11111111..33...",".........11111111.......",
+        ".........11111111.......","........222222222.......",".......22222222222......",
+        "......2222......2222....",".....2222........2222...","....2222..........2222..",
+        "....222............222..","...222..............222.","...22................22.",
+        "..kkk................kkk","........................","........................"];
+
+    const CAR_A = [
+        "........................","........................","........................",
+        "........................","........................","........................",
+        "........1111111.........",".......111111111........","......1112222111........",
+        ".....111222221111.......","....111222221111111.....","....1111111111111111....",
+        "....1111111111111111....","....1111111111111111....","....111111111111111w....",
+        ".....11111111111111.....","......111111111111......","........................",
+        "....kkkwk........kkwk...","....kkwkk........kwkk...","....kkkkk........kkkkk..",
+        "........................","........................","........................"];
+    const CAR_B = [
+        "........................","........................","........................",
+        "........................","........................","........................",
+        "........1111111.........",".......111111111........","......1112222111........",
+        ".....111222221111.......","....111222221111111.....","....1111111111111111....",
+        "....1111111111111111....","....1111111111111111....","....111111111111111w....",
+        ".....11111111111111.....","......111111111111......","........................",
+        "....kkkkw........kkkkw..","....wkkkk........wkkkk..","....kkkkk........kkkkk..",
+        "........................","........................","........................"];
+
+    const COIN_A = [
+        "..111111..",".12222221.","1222w22221","122w222221","1222222221",
+        "1222222221","1222222221","1222222221",".12222221.","..111111.."];
+    const COIN_B = [
+        "....11....","...1221...","..122221..","..12w221..","..122221..",
+        "..122221..","..122221..","..12w221..","...1221...","....11...."];
+    const CoinPal = { 1:[255,215,0], 2:[255,230,50], w:[255,250,220] };
+
+    const DEMON_A = [
+        ".1............1.",".11..........11.","..111111111111..","..111111111111..",
+        "..11w111111w11..","..111111111111..",".11111111111111.","1111111111111111",
+        "...1111111111...","....11111111....","....11....11....","...11......11..."];
+    const DEMON_B = [
+        ".1............1.",".11..........11.","..111111111111..","..111111111111..",
+        "..11w111111w11..","..111111111111..","..111111111111..","...1111111111...",
+        "..111111111111..","1111111111111111","....11....11....","...11......11..."];
+    const DemonPal = { 1: "rgb(150,20,20)", w: "#ffd200" };
+
+    const DEER_A = [
+        ".............33.33..","..............3333..","..............11111.",
+        "..............11111.","..............11111.","..111111111111111111",
+        ".1111111111111111111",".1122222222222221111","..1111111111111111..",
+        "..11..11...11...11..","..11..11...11...11..","..11..11...11...11..",
+        "..kk..kk...kk...kk.."];
+    const DEER_B = [
+        ".............33.33..","..............3333..","..............11111.",
+        "..............11111.","..............11111.","..111111111111111111",
+        ".1111111111111111111",".1122222222222221111","..1111111111111111..",
+        "...11..11.11..11....","...11..11.11..11....","...11..11.11..11....",
+        "...kk..kk.kk..kk...."];
+    const DeerPal = { 1: "rgb(110,70,40)", 2: "rgb(190,150,110)",
+                      3: "rgb(60,40,25)", k: "rgb(30,20,15)" };
+
+    // ══════════════════════ БОССЫ ══════════════════════
+    const BOSSES = {
+        demon: { name: "ДЕМОН",          hp: 4, w: 50, h: 40, ability: "🌋 вулканы" },
+        bat:   { name: "МЫШЬ-КОРОЛЕВА",  hp: 2, w: 52, h: 38, ability: "🐭 мыши" },
+        deer:  { name: "ОЛЕНЬ-ВЕЛИКАН",  hp: 3, w: 64, h: 44, ability: "🐏 таран" }
+    };
+
+    const Skins = [
+        { name:"Классика", price:0, pal:{1:[[24,27,28],[220,224,235]]},
+          frames:[DINO_RUN_A, DINO_RUN_B, DINO_JUMP] },
+        { name:"Изумруд", price:1000, pal:{1:[[30,130,76],[130,225,175]]},
+          frames:[DINO_RUN_A, DINO_RUN_B, DINO_JUMP] },
+        { name:"Огонь", price:1000, pal:{1:[[200,70,40],[255,145,95]]},
+          frames:[DINO_RUN_A, DINO_RUN_B, DINO_JUMP] },
+        { name:"Небо", price:1000, pal:{1:[[50,100,190],[155,205,255]]},
+          frames:[DINO_RUN_A, DINO_RUN_B, DINO_JUMP] },
+        { name:"Золото", price:1000, pal:{1:[[190,140,30],[255,212,110]]},
+          frames:[DINO_RUN_A, DINO_RUN_B, DINO_JUMP] },
+        { name:"Человек‑паук", price:5000, pal:{1:[[210,20,20],[235,120,120]], 2:[[30,45,160],[110,130,240]]},
+          frames:[SPIDER_A, SPIDER_B, SPIDER_JUMP] },
+        { name:"Человек", price:2500, pal:{1:[[60,120,220],[140,190,255]], 2:[[50,50,60],[160,165,175]],
+          3:[[240,195,160],[255,220,190]], 4:[[90,55,30],[170,120,80]]},
+          frames:[HUMAN_A, HUMAN_B, HUMAN_JUMP] },
+        { name:"Машинка", price:3000, pal:{1:[[210,40,40],[255,140,140]], 2:[[170,220,250],[220,245,255]]},
+          frames:[CAR_A, CAR_B, CAR_A] }
+    ];
+
+    // ══════════════════════ ДИНОЗАВРИК ══════════════════════
+    const CanvasWidth = 900, CanvasHeight = 360;
+    const GroundOffset = 48, DinoX = 82, DinoWidth = 52, DinoHeight = 50;
+    const InitialSpeed = 300, MaximumSpeed = 680;
+    const LevelInterval = 10, LevelSpeedBoost = 28, LevelGapShrink = 10;
+    const JumpVelocity = -620, Gravity = 1700;
+    const MinimumObstacleGap = 240, GapTimeSafety = 0.92, CoinsPerPoints = 3;
+    const BossFirstDelay = 45, BossRespawnDelay = 70;
+
+    const canvas = document.getElementById("dinoCanvas");
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    const timerElement = document.getElementById("timer");
+    const lobbyElement = document.getElementById("lobby");
+    const overElement = document.getElementById("overPanel");
+    const startScreenEl = document.getElementById("startScreen");
+    const skinList = document.getElementById("skinList");
+    const overStats = document.getElementById("overStats");
+    const overCoins = document.getElementById("overCoins");
+
+    const GroundY = CanvasHeight - GroundOffset;
+
+    let highScore = 0, skinIndex = 0, owned = [0], deathsDino = 0;
+    try {
+        highScore = parseInt(localStorage.getItem("dinoHighScore"), 10) || 0;
+        skinIndex = parseInt(localStorage.getItem("dinoSkin"), 10) || 0;
+        owned = JSON.parse(localStorage.getItem("dinoOwned") || "[0]");
+        deathsDino = parseInt(localStorage.getItem("dinoDeaths"), 10) || 0;
+    } catch (e) {}
+    if (skinIndex < 0 || skinIndex >= Skins.length) skinIndex = 0;
+    if (!Array.isArray(owned) || owned.length === 0) owned = [0];
+
+    function saveAll() {
+        try {
+            localStorage.setItem("dinoHighScore", String(highScore));
+            localStorage.setItem("dinoSkin", String(skinIndex));
+            localStorage.setItem("dinoOwned", JSON.stringify(owned));
+            localStorage.setItem("dinoDeaths", String(deathsDino));
+        } catch (e) {}
+        updateCoinsUI();
+    }
+
+    let dinoMode = "start";
+    let dinoY = GroundY - DinoHeight, dinoVelocityY = 0;
+    let dinoExtraX = 0;
+    let moveLeft = false, moveRight = false;
+    let distance = 0, speed = InitialSpeed;
+    let level = 0, levelTimer = 0;
+    let nextCactusX = CanvasWidth + 310, nextCoinX = CanvasWidth + 600;
+    let runFrame = 0, onGround = true, score = 0, gameTime = 0, runCoins = 0;
+
+    let locIndex = 0, locTimer = 0;
+    let curPal = {};
+    let sunA = 1, starsA = 0, batsA = 0;
+    let hellA = 0, cityA = 0, mountA = 0;
+    let locNotice = "", locNoticeTimer = 0;
+
+    let bats = [], cacti = [], coinItems = [], embers = [], lavaPools = [];
+    let demons = [], birds = [], deer = [], smoke = [];
+    let bossBats = [], volcanoes = [];
+    let supermen = [], hellFiends = [];
+    let supermanTimer = 8, fiendTimer = 6;
+    let coinSpin = 0;
+    const BatWidth = 18;
+
+    let boss = null;
+    let bossTimer = BossFirstDelay;
+    let bossNotice = "", bossNoticeTimer = 0;
+
+    const clouds = [
+        { x:170, y:64, parallax:0.20, scale:1 },
+        { x:430, y:105, parallax:0.32, scale:1 },
+        { x:735, y:53, parallax:0.16, scale:1 },
+        { x:980, y:125, parallax:0.25, scale:1 }
+    ];
+    const buildings = [
+        { x:40,  w:70, h:200 }, { x:150, w:50, h:260, smoke:true }, { x:250, w:90, h:150 },
+        { x:390, w:60, h:230 }, { x:500, w:80, h:180, smoke:true }, { x:630, w:55, h:250 },
+        { x:740, w:75, h:210, smoke:true }
+    ];
+    const mtns = [
+        { x:60,  w:200, h:120 }, { x:300, w:150, h:90 }, { x:500, w:230, h:150 },
+        { x:780, w:170, h:100 }
+    ];
+
+    function createBat() {
+        return { x: CanvasWidth + random(20,120), y: random(40, CanvasHeight-110),
+                 speed: random(120,260), frame: Math.random()*6 };
+    }
+
+    function setPaletteInstant(loc) {
+        for (const k of ["sky","ground","cactus","cloud","ui"]) curPal[k] = loc[k].slice();
+        sunA = loc.sun ? 1 : 0;
+        starsA = loc.stars ? 1 : 0;
+        batsA = loc.bats ? 1 : 0;
+        hellA = loc.decor === "hell" ? 1 : 0;
+        cityA = loc.decor === "city" ? 1 : 0;
+        mountA = loc.decor === "mountains" ? 1 : 0;
+    }
+    function pickRandomLocation() {
+        locIndex = random(0, LOCATIONS.length);
+        locNotice = LOCATIONS[locIndex].name;
+        locNoticeTimer = 3;
+    }
+    function pickNextLocation() {
+        let next;
+        do { next = random(0, LOCATIONS.length); } while (next === locIndex);
+        locIndex = next;
+        locNotice = LOCATIONS[locIndex].name;
+        locNoticeTimer = 3;
+    }
+    function mixPalette(key) {
+        const c = curPal[key];
+        return "rgb(" + Math.round(c[0]) + ", " + Math.round(c[1]) + ", " + Math.round(c[2]) + ")";
+    }
+    function getSkinColors() {
+        const skin = Skins[skinIndex];
+        const dark = Math.max(starsA, hellA * 0.6);
+        const map = { w:"#ffffff", k:"#101014" };
+        for (const key in skin.pal) {
+            const pair = skin.pal[key];
+            map[key] = mixRGB(pair[0], pair[1], dark);
+        }
+        return map;
+    }
+    function drawPattern(rows, colors, x, y, scale) {
+        for (let r = 0; r < rows.length; r++) {
+            const line = rows[r];
+            for (let c = 0; c < line.length; c++) {
+                const ch = line[c];
+                if (ch === ".") continue;
+                const color = colors[ch];
+                if (!color) continue;
+                ctx.fillStyle = color;
+                ctx.fillRect(x + c*scale, y + r*scale, scale, scale);
+            }
+        }
+    }
+
+    function showStart() {
+        dinoMode = "start";
+        startScreenEl.classList.remove("hidden");
+        lobbyElement.classList.add("hidden");
+        overElement.classList.add("hidden");
+    }
+    function showLobby() {
+        dinoMode = "lobby";
+        startScreenEl.classList.add("hidden");
+        lobbyElement.classList.remove("hidden");
+        overElement.classList.add("hidden");
+        renderLobby();
+    }
+    function renderLobby() {
+        updateCoinsUI();
+        skinList.innerHTML = "";
+        Skins.forEach((skin, i) => {
+            const isOwned = owned.includes(i);
+            const isSelected = i === skinIndex;
+            const row = document.createElement("div");
+            row.className = "skin-row" + (isOwned ? " owned" : "") + (isSelected ? " selected" : "");
+            const swatch = document.createElement("span");
+            swatch.className = "skin-swatch";
+            const main = skin.pal[1];
+            swatch.style.background = mixRGB(main[0], main[1], 0.25);
+            const name = document.createElement("span");
+            name.className = "skin-name";
+            name.textContent = skin.name;
+            row.appendChild(swatch); row.appendChild(name);
+            const btn = document.createElement("button");
+            if (isOwned) {
+                const price = document.createElement("span");
+                price.className = "skin-price";
+                price.textContent = "куплён";
+                row.appendChild(price);
+                if (isSelected) { btn.className = "btn"; btn.textContent = "Выбран"; btn.disabled = true; }
+                else {
+                    btn.className = "btn select"; btn.textContent = "Выбрать";
+                    btn.addEventListener("click", () => { skinIndex = i; saveAll(); renderLobby(); });
+                }
+                row.appendChild(btn);
+            } else {
+                const price = document.createElement("span");
+                price.className = "skin-price";
+                price.textContent = skin.price + " монет";
+                row.appendChild(price);
+                btn.className = "btn buy"; btn.textContent = "Купить";
+                if (coins < skin.price) btn.disabled = true;
+                btn.addEventListener("click", () => {
+                    if (coins >= skin.price && !owned.includes(i)) {
+                        coins -= skin.price; owned.push(i); skinIndex = i;
+                        saveAll(); renderLobby();
+                    }
+                });
+                row.appendChild(btn);
+            }
+            skinList.appendChild(row);
+        });
+    }
+
+    function createObstacle(x) {
+        const type = LOCATIONS[locIndex].obstacle || "cactus";
+        if (type === "car") {
+            const isLarge = Math.random() < 0.4;
+            return { x, type, width: isLarge ? 58 : 46, height: isLarge ? 42 : 32,
+                     isDouble: false, isLarge, color: random(0, 3) };
+        }
+        if (type === "tree") {
+            const isLarge = Math.random() < 0.55;
+            return { x, type, width: isLarge ? 42 : 30, height: isLarge ? 76 : 54,
+                     isDouble: false, isLarge };
+        }
+        if (type === "spike") {
+            const isLarge = Math.random() < 0.5;
+            const isDouble = Math.random() < 0.4;
+            return { x, type, width: isDouble ? (isLarge ? 46 : 38) : (isLarge ? 26 : 20),
+                     height: isLarge ? 58 : 40, isDouble, isLarge };
+        }
+        const largeChance = Math.min(0.75, 0.48 + level * 0.03);
+        const doubleChance = Math.min(0.55, 0.32 + level * 0.025);
+        const isLarge = Math.random() < largeChance;
+        const isDouble = Math.random() < doubleChance;
+        const height = isLarge ? random(58, 72) : random(38, 49);
+        const width = isDouble ? (isLarge ? 48 : 41) : (isLarge ? 31 : 25);
+        return { x, type, width, height, isDouble, isLarge };
+    }
+
+    function cactusHitbox(c) {
+        const w = Math.max(8, c.width - 10);
+        return { x: c.x + 5, y: GroundY - c.height + 4, w, h: c.height - 4 };
+    }
+    function dinoHitbox() {
+        const dx = DinoX + dinoExtraX;
+        return { x: dx + 8, y: dinoY + 5, w: DinoWidth - 14, h: DinoHeight - 7 };
+    }
+    function hitboxesOverlap(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function resetRun() {
+        cacti = []; bats = []; coinItems = []; embers = []; lavaPools = [];
+        demons = []; birds = []; deer = []; smoke = [];
+        bossBats = []; volcanoes = [];
+        supermen = []; hellFiends = [];
+        supermanTimer = 8; fiendTimer = 6;
+        distance = 0; score = 0; speed = InitialSpeed;
+        level = 0; levelTimer = 0;
+        dinoVelocityY = 0; onGround = true;
+        dinoExtraX = 0; moveLeft = false; moveRight = false;
+        runFrame = 0; gameTime = 0; runCoins = 0;
+        dinoY = GroundY - DinoHeight;
+        nextCactusX = CanvasWidth + 310; nextCoinX = CanvasWidth + 600;
+        locTimer = 0;
+        pickRandomLocation();
+        setPaletteInstant(LOCATIONS[locIndex]);
+        locNotice = ""; locNoticeTimer = 0;
+        boss = null;
+        bossTimer = BossFirstDelay;
+        bossNotice = ""; bossNoticeTimer = 0;
+        for (let i = 0; i < 8; i++) {
+            lavaPools.push({ x: 500 + i * 300, w: random(50, 90) });
+        }
+        timerElement.textContent = "Время: 0:00";
+    }
+
+    function startDino() {
+        resetRun();
+        dinoMode = "running";
+        startScreenEl.classList.add("hidden");
+        lobbyElement.classList.add("hidden");
+        overElement.classList.add("hidden");
+    }
+
+    function endRun() {
+        dinoMode = "over";
+        deathsDino++;
+        const fromPoints = Math.floor(score / CoinsPerPoints);
+        coins += fromPoints + runCoins;
+        saveAll();
+        overStats.textContent = "Очки: " + score + "  •  Рекорд: " + highScore +
+            "  •  Смертей: " + deathsDino;
+        overCoins.textContent = "За очки: +" + fromPoints + " монет\n" +
+            "Собрано монет: +" + runCoins + "\nВсего монет: " + coins;
+        overElement.classList.remove("hidden");
+    }
+
+    function dinoJump() {
+        if (dinoMode !== "running") return;
+        if (onGround) { onGround = false; dinoVelocityY = JumpVelocity; }
+    }
+
+    function updateLocation(dt) {
+        const loc = LOCATIONS[locIndex];
+        const t = Math.min(1, dt / LocTransition);
+        for (const k of ["sky","ground","cactus","cloud","ui"]) {
+            const c = curPal[k], tgt = loc[k];
+            for (let i = 0; i < 3; i++) c[i] += (tgt[i] - c[i]) * t;
+        }
+        sunA   += ((loc.sun   ? 1 : 0) - sunA)   * t;
+        starsA += ((loc.stars ? 1 : 0) - starsA) * t;
+        batsA  += ((loc.bats  ? 1 : 0) - batsA)  * t;
+        hellA  += ((loc.decor === "hell"      ? 1 : 0) - hellA)  * t;
+        cityA  += ((loc.decor === "city"      ? 1 : 0) - cityA)  * t;
+        mountA += ((loc.decor === "mountains" ? 1 : 0) - mountA) * t;
+    }
+
+    function dinoUpdate(dt) {
+        updateLocation(dt);
+        if (locNoticeTimer > 0) locNoticeTimer -= dt;
+        if (bossNoticeTimer > 0) bossNoticeTimer -= dt;
+        coinSpin += dt * 6;
+        for (const cloud of clouds) {
+            cloud.x -= speed * cloud.parallax * dt;
+            if (cloud.x + 66 * cloud.scale < -20) {
+                cloud.x = CanvasWidth + random(80,300);
+                cloud.y = random(35, Math.max(80, CanvasHeight/2));
+            }
+        }
+        if (dinoMode !== "running") return;
+
+        if (boss || supermen.length || hellFiends.length) {
+            if (moveLeft)  dinoExtraX -= 260 * dt;
+            if (moveRight) dinoExtraX += 260 * dt;
+            dinoExtraX = Math.max(0, Math.min(150, dinoExtraX));
+        } else {
+            dinoExtraX += (0 - dinoExtraX) * Math.min(1, dt * 4);
+        }
+
+        gameTime += dt;
+        const totalSeconds = Math.floor(gameTime);
+        const shownSeconds = parseInt(timerElement.dataset.sec || "0", 10);
+        if (totalSeconds !== shownSeconds) {
+            timerElement.dataset.sec = String(totalSeconds);
+            const minutes = Math.floor(totalSeconds/60), seconds = totalSeconds % 60;
+            timerElement.textContent = "Время: " + minutes + ":" + String(seconds).padStart(2,"0");
+        }
+
+        levelTimer += dt;
+        if (levelTimer >= LevelInterval) {
+            levelTimer -= LevelInterval;
+            level++;
+            speed = Math.min(MaximumSpeed, InitialSpeed + level * LevelSpeedBoost);
+        }
+
+        locTimer += dt;
+        if (locTimer >= LocInterval) {
+            locTimer -= LocInterval;
+            pickNextLocation();
+        }
+
+        distance += speed * dt;
+        score = Math.floor(distance / 10);
+        if (score > highScore) highScore = score;
+        runFrame++;
+
+        if (!onGround) {
+            dinoVelocityY += Gravity * dt;
+            dinoY += dinoVelocityY * dt;
+            if (dinoY >= GroundY - DinoHeight) {
+                dinoY = GroundY - DinoHeight; dinoVelocityY = 0; onGround = true;
+            }
+        } else dinoY = GroundY - DinoHeight;
+
+        const movement = speed * dt;
+        cacti = cacti.filter(c => c.x + c.width >= -10);
+        for (const c of cacti) c.x -= movement;
+        if (!boss && nextCactusX <= CanvasWidth + 50) {
+            const obstacle = createObstacle(nextCactusX);
+            cacti.push(obstacle);
+            const safeGap = Math.max(MinimumObstacleGap, speed * GapTimeSafety + 90);
+            const extraGap = random(35, Math.max(40, 145 - level * LevelGapShrink));
+            nextCactusX += obstacle.width + safeGap + extraGap;
+        }
+        nextCactusX -= movement;
+
+        if (nextCoinX <= CanvasWidth + 50) {
+            if (Math.random() < 0.8) {
+                const n = random(3,5);
+                const baseY = random(GroundY - 150, GroundY - 85);
+                for (let i = 0; i < n; i++) {
+                    const lift = Math.round(Math.sin((i / Math.max(1, n-1)) * Math.PI) * 34);
+                    coinItems.push({ x: nextCoinX + i*34, y: baseY - lift });
+                }
+            }
+            nextCoinX += random(420, 820);
+        }
+        nextCoinX -= movement;
+
+        for (let i = coinItems.length - 1; i >= 0; i--) {
+            const m = coinItems[i];
+            m.x -= movement;
+            if (m.x < -24) { coinItems.splice(i,1); continue; }
+            if (hitboxesOverlap(dinoHitbox(), { x:m.x, y:m.y, w:20, h:20 })) {
+                coinItems.splice(i,1); runCoins++;
+            }
+        }
+
+        if (batsA > 0.8 && bats.length < 5 && Math.random() < 0.4) bats.push(createBat());
+        for (let i = bats.length - 1; i >= 0; i--) {
+            const b = bats[i];
+            b.x -= (b.speed + speed * 0.3) * dt;
+            b.y += Math.sin(b.frame) * 12 * dt;
+            b.frame += dt * 14;
+            if (b.x < -BatWidth || batsA < 0.2) bats.splice(i,1);
+        }
+
+        if (hellA > 0.8 && demons.length < 4 && Math.random() < 0.3) {
+            demons.push({ x: CanvasWidth + random(20, 120),
+                          y: random(40, CanvasHeight - 120),
+                          speed: random(100, 220), frame: Math.random() * 6 });
+        }
+        for (let i = demons.length - 1; i >= 0; i--) {
+            const d = demons[i];
+            d.x -= (d.speed + speed * 0.3) * dt;
+            d.y += Math.sin(d.frame) * 10 * dt;
+            d.frame += dt * 10;
+            if (d.x < -34 || hellA < 0.2) demons.splice(i, 1);
+        }
+
+        if (mountA > 0.8 && birds.length < 6 && Math.random() < 0.25) {
+            birds.push({ x: CanvasWidth + random(10, 150),
+                         y: random(30, GroundY - 160),
+                         speed: random(60, 120), frame: Math.random() * 4 });
+        }
+        for (let i = birds.length - 1; i >= 0; i--) {
+            const bd = birds[i];
+            bd.x -= (bd.speed + speed * 0.15) * dt;
+            bd.frame += dt * 8;
+            if (bd.x < -12 || mountA < 0.2) birds.splice(i, 1);
+        }
+
+        if (mountA > 0.8 && deer.length < 3 && Math.random() < 0.12) {
+            deer.push({ x: CanvasWidth + random(30, 160), frame: Math.random() * 6 });
+        }
+        for (let i = deer.length - 1; i >= 0; i--) {
+            const dr = deer[i];
+            dr.x -= (speed + 50) * dt;
+            dr.frame += dt * 9;
+            if (dr.x < -60 || mountA < 0.2) deer.splice(i, 1);
+        }
+
+        if (cityA > 0.5) {
+            const bOff = (distance * 0.12) % 900;
+            for (const b of buildings) {
+                if (!b.smoke) continue;
+                const bx = b.x - bOff;
+                if (bx > -100 && bx < CanvasWidth && Math.random() < 0.06) {
+                    smoke.push({ x: bx + b.w - 9, y: GroundY - b.h - 14,
+                                 r: 5, life: 1, drift: random(6, 16) });
+                }
+            }
+        }
+        for (let i = smoke.length - 1; i >= 0; i--) {
+            const p = smoke[i];
+            p.y -= 22 * dt;
+            p.x -= (speed * 0.25 + p.drift) * dt;
+            p.r += 6 * dt;
+            p.life -= dt * 0.5;
+            if (p.life <= 0 || cityA < 0.2) smoke.splice(i, 1);
+        }
+
+        for (const p of lavaPools) {
+            p.x -= movement;
+            if (p.x + p.w < -20) {
+                p.x = CanvasWidth + random(200, 700);
+                p.w = random(50, 90);
+            }
+        }
+
+        if (hellA > 0.5 && embers.length < 25 && Math.random() < 0.35) {
+            embers.push({ x: random(0, CanvasWidth), y: GroundY,
+                          vy: -random(30, 90), life: 1 });
+        }
+        for (let i = embers.length - 1; i >= 0; i--) {
+            const e = embers[i];
+            e.y += e.vy * dt;
+            e.x -= movement * 0.4 * dt;
+            e.life -= dt * 0.7;
+            if (e.life <= 0 || hellA < 0.2) embers.splice(i, 1);
+        }
+
+        if (!boss) {
+            bossTimer -= dt;
+            if (bossTimer <= 0) spawnBoss();
+        } else {
+            updateBoss(dt);
+        }
+        updateBossAttacks(dt, movement);
+        updateExtraHazards(dt, movement);
+
+        const dinoBox = dinoHitbox();
+        for (const c of cacti) {
+            if (hitboxesOverlap(dinoBox, cactusHitbox(c))) { endRun(); break; }
+        }
+    }
+
+    function spawnBoss() {
+        const loc = LOCATIONS[locIndex];
+        let type;
+        if (loc.decor === "hell") type = "demon";
+        else if (loc.decor === "mountains") type = "deer";
+        else if (loc.bats) type = "bat";
+        else type = ["demon", "bat", "deer"][random(0, 3)];
+        boss = { type, hp: BOSSES[type].hp, maxHp: BOSSES[type].hp,
+                 phase: "enter", x: CanvasWidth + 80, y: 70, t: 0, frame: 0,
+                 dashHit: false, abilityTimer: 2.0 };
+        bossNotice = "⚠️ БОСС: " + BOSSES[type].name + " — " + BOSSES[type].ability;
+        bossNoticeTimer = 3;
+        bossBats = []; volcanoes = [];
+    }
+
+    function updateBoss(dt) {
+        if (!boss) return;
+        const info = BOSSES[boss.type];
+        boss.frame += dt * 10;
+
+        if (boss.phase === "enter") {
+            boss.t += dt;
+            boss.x += (CanvasWidth * 0.72 - boss.x) * Math.min(1, dt * 2.2);
+            boss.y += (70 - boss.y) * Math.min(1, dt * 2.2);
+            if (boss.t > 1.6) { boss.phase = "telegraph"; boss.t = 0; }
+        } else if (boss.phase === "telegraph") {
+            boss.t += dt;
+            boss.y = 70 + Math.sin(boss.t * 20) * 4;
+            tickAbility(dt);
+            if (boss.t > 1.0) {
+                boss.phase = "dash";
+                boss.t = 0;
+                boss.y = GroundY - info.h + 6;
+                boss.dashHit = false;
+            }
+        } else if (boss.phase === "dash") {
+            boss.t += dt;
+            boss.x -= (1050 + speed * 0.35) * dt;
+            if (!boss.dashHit &&
+                hitboxesOverlap(dinoHitbox(), { x: boss.x, y: boss.y,
+                                                w: info.w, h: info.h })) {
+                boss.dashHit = true;
+                endRun();
+                return;
+            }
+            if (boss.x < -130) {
+                if (boss.hp > 1) {
+                    boss.hp--;
+                    boss.phase = "recover";
+                    boss.t = 0;
+                    boss.x = CanvasWidth + 80;
+                    boss.y = 70;
+                } else {
+                    boss.hp = 0;
+                    boss.phase = "leave";
+                    boss.t = 0;
+                    runCoins += 5;
+                    bossNotice = "🏆 Босс побеждён! +5 монет";
+                    bossNoticeTimer = 2.5;
+                }
+            }
+        } else if (boss.phase === "recover") {
+            boss.t += dt;
+            boss.y = 70 + Math.sin(boss.t * 4) * 8;
+            tickAbility(dt);
+            if (boss.t > 1.4) { boss.phase = "telegraph"; boss.t = 0; }
+        } else if (boss.phase === "leave") {
+            boss.t += dt;
+            boss.x += (240 + boss.t * 200) * dt;
+            boss.y -= 160 * dt;
+            if (boss.t > 3) {
+                boss = null;
+                bossBats = []; volcanoes = [];
+                bossTimer = BossRespawnDelay;
+            }
+        }
+    }
+
+    function tickAbility(dt) {
+        boss.abilityTimer -= dt;
+        if (boss.abilityTimer > 0) return;
+
+        if (boss.type === "bat" && bossBats.length < 4) {
+            bossBats.push({ x: boss.x + 10,
+                            y: random(GroundY - 130, GroundY - 46),
+                            speed: random(240, 330), frame: Math.random() * 6 });
+            boss.abilityTimer = 2.2;
+        } else if (boss.type === "demon" && volcanoes.length < 2) {
+            const vx = random(300, CanvasWidth - 80);
+            volcanoes.push({ x: vx, phase: "warn", t: 0 });
+            boss.abilityTimer = 3.0;
+        } else {
+            boss.abilityTimer = 1.5;
+        }
+    }
+
+    function updateBossAttacks(dt, movement) {
+        for (let i = bossBats.length - 1; i >= 0; i--) {
+            const m = bossBats[i];
+            m.x -= (m.speed + speed * 0.2) * dt;
+            m.frame += dt * 14;
+            if (m.x < -30) { bossBats.splice(i, 1); continue; }
+            if (hitboxesOverlap(dinoHitbox(), { x: m.x, y: m.y, w: 18, h: 14 })) {
+                bossBats.splice(i, 1);
+                endRun();
+                return;
+            }
+        }
+        for (let i = volcanoes.length - 1; i >= 0; i--) {
+            const v = volcanoes[i];
+            v.t += dt;
+            v.x -= movement * 0.6;
+            if (v.phase === "warn") {
+                if (v.t > 1.3) { v.phase = "erupt"; v.t = 0; }
+            } else if (v.phase === "erupt") {
+                if (hitboxesOverlap(dinoHitbox(), { x: v.x - 13, y: GroundY - 110,
+                                                    w: 26, h: 110 })) {
+                    endRun();
+                    return;
+                }
+                if (v.t > 0.9) { volcanoes.splice(i, 1); }
+            }
+        }
+    }
+
+    function updateExtraHazards(dt, movement) {
+        if (cityA > 0.8 && !boss) {
+            supermanTimer -= dt;
+            if (supermanTimer <= 0 && supermen.length === 0) {
+                supermen.push({ x: CanvasWidth + 60, y: 40, t: 0 });
+                supermanTimer = random(9, 15);
+            }
+        }
+        for (let i = supermen.length - 1; i >= 0; i--) {
+            const s = supermen[i];
+            s.t += dt;
+            s.x -= (320 + speed * 0.25) * dt;
+            s.y += (GroundY - 42 - s.y) * Math.min(1, dt * 1.6);
+            if (s.x < -70) { supermen.splice(i, 1); continue; }
+            if (hitboxesOverlap(dinoHitbox(), { x: s.x, y: s.y, w: 34, h: 28 })) {
+                supermen.splice(i, 1);
+                endRun();
+                return;
+            }
+        }
+        if (hellA > 0.8) {
+            fiendTimer -= dt;
+            if (fiendTimer <= 0 && hellFiends.length < 3) {
+                hellFiends.push({ x: CanvasWidth + random(20, 90),
+                                  y: random(GroundY - 125, GroundY - 48),
+                                  speed: random(230, 310), frame: Math.random() * 6 });
+                fiendTimer = random(3.5, 6.5);
+            }
+        }
+        for (let i = hellFiends.length - 1; i >= 0; i--) {
+            const f = hellFiends[i];
+            f.x -= (f.speed + speed * 0.2) * dt;
+            f.y += Math.sin(f.frame) * 14 * dt;
+            f.frame += dt * 12;
+            if (f.x < -40) { hellFiends.splice(i, 1); continue; }
+            if (hitboxesOverlap(dinoHitbox(), { x: f.x, y: f.y, w: 26, h: 22 })) {
+                hellFiends.splice(i, 1);
+                endRun();
+                return;
+            }
+        }
+    }
+
+    function drawBossBat(x, y) {
+        const up = Math.floor(boss.frame) % 2 === 0;
+        ctx.fillStyle = "#1c1030";
+        ctx.fillRect(x + 14, y + 8, 20, 16);
+        ctx.fillRect(x + 16, y, 5, 9);
+        ctx.fillRect(x + 27, y, 5, 9);
+        ctx.fillStyle = "#ffdf3d";
+        ctx.fillRect(x + 18, y + 11, 4, 4);
+        ctx.fillRect(x + 26, y + 11, 4, 4);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x + 20, y + 21, 3, 4);
+        ctx.fillRect(x + 25, y + 21, 3, 4);
+        ctx.fillStyle = "#1c1030";
+        if (up) {
+            ctx.fillRect(x, y, 14, 14);
+            ctx.fillRect(x + 34, y, 14, 14);
+        } else {
+            ctx.fillRect(x, y + 16, 14, 14);
+            ctx.fillRect(x + 34, y + 16, 14, 14);
+        }
+    }
+
+    function drawBoss() {
+        if (!boss) return;
+        const blink = boss.phase === "telegraph" && Math.floor(boss.t * 8) % 2 === 0;
+        ctx.save();
+        if (blink) ctx.globalAlpha = 0.45;
+
+        if (boss.type === "demon") {
+            const f = Math.floor(boss.frame) % 2 === 0 ? DEMON_A : DEMON_B;
+            drawPattern(f, DemonPal, Math.round(boss.x), Math.round(boss.y), 3);
+        } else if (boss.type === "deer") {
+            const f = Math.floor(boss.frame) % 2 === 0 ? DEER_A : DEER_B;
+            drawPattern(f, DeerPal, Math.round(boss.x), Math.round(boss.y), 3);
+        } else {
+            drawBossBat(Math.round(boss.x), Math.round(boss.y));
+        }
+        ctx.restore();
+
+        if (boss.phase !== "leave") {
+            const bw = 90, bx = Math.round(boss.x), by = Math.round(boss.y) - 14;
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(bx, by, bw, 7);
+            ctx.fillStyle = "#e8433f";
+            ctx.fillRect(bx + 1, by + 1, Math.max(0, (bw - 2) * (boss.hp / boss.maxHp)), 5);
+        }
+        if (boss.phase === "telegraph") {
+            ctx.font = "bold 28px Consolas, monospace";
+            ctx.fillStyle = "#ffd166";
+            ctx.textAlign = "center";
+            ctx.fillText("!", Math.round(boss.x) + 25, Math.round(boss.y) - 18);
+            ctx.textAlign = "left";
+        }
+    }
+
+    function drawBossAttacks() {
+        if (bossBats.length) {
+            ctx.save();
+            ctx.fillStyle = "#241540";
+            for (const m of bossBats) {
+                const x = Math.round(m.x), y = Math.round(m.y);
+                const up = Math.floor(m.frame) % 2 === 0;
+                ctx.fillRect(x + 5, y + 3, 8, 7);
+                ctx.fillStyle = "#ffdf3d";
+                ctx.fillRect(x + 6, y + 4, 2, 2);
+                ctx.fillStyle = "#241540";
+                if (up) { ctx.fillRect(x, y, 5, 6); ctx.fillRect(x + 13, y, 5, 6); }
+                else { ctx.fillRect(x, y + 7, 5, 6); ctx.fillRect(x + 13, y + 7, 5, 6); }
+            }
+            ctx.restore();
+        }
+        if (volcanoes.length) {
+            for (const v of volcanoes) {
+                const vx = Math.round(v.x);
+                if (v.phase === "warn") {
+                    const pulse = 0.5 + Math.sin(v.t * 16) * 0.5;
+                    ctx.fillStyle = "rgba(255,90,20," + (0.35 + pulse * 0.4).toFixed(2) + ")";
+                    ctx.beginPath();
+                    ctx.arc(vx, GroundY - 4, 10 + pulse * 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.font = "bold 26px Consolas, monospace";
+                    ctx.fillStyle = "#ff8a3d";
+                    ctx.textAlign = "center";
+                    ctx.fillText("!", vx, GroundY - 30);
+                    ctx.textAlign = "left";
+                } else {
+                    const growth = Math.min(1, v.t / 0.15);
+                    const hgt = 110 * growth;
+                    ctx.fillStyle = "rgba(255,110,20,0.95)";
+                    ctx.fillRect(vx - 13, GroundY - hgt, 26, hgt);
+                    ctx.fillStyle = "rgba(255,220,80,0.85)";
+                    ctx.fillRect(vx - 6, GroundY - hgt, 12, hgt);
+                    ctx.fillStyle = "rgba(255,240,150,0.9)";
+                    for (let k = 0; k < 5; k++) {
+                        const sx = vx + random(-14, 14), sy = GroundY - hgt - random(0, 18);
+                        ctx.fillRect(sx, sy, 3, 3);
+                    }
+                }
+            }
+        }
+    }
+
+    function drawExtraHazards() {
+        if (supermen.length) {
+            for (const s of supermen) {
+                const x = Math.round(s.x), y = Math.round(s.y);
+                ctx.fillStyle = "#2456c4";
+                ctx.fillRect(x + 6, y + 4, 20, 14);
+                ctx.fillRect(x, y + 2, 8, 16);
+                ctx.fillStyle = "#e23b32";
+                ctx.fillRect(x + 12, y, 12, 5);
+                ctx.fillRect(x + 13, y + 18, 10, 4);
+                ctx.fillStyle = "#ffe9b0";
+                ctx.fillRect(x + 12, y + 8, 8, 7);
+                if (s.t < 1.2) {
+                    ctx.font = "bold 22px Consolas, monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "#8fc7ff";
+                    ctx.fillText("⚠️", x + 16, y - 14);
+                    ctx.textAlign = "left";
+                }
+            }
+        }
+        if (hellFiends.length) {
+            for (const f of hellFiends) {
+                const fl = Math.floor(f.frame) % 2 === 0 ? DEMON_A : DEMON_B;
+                drawPattern(fl, DemonPal, Math.round(f.x), Math.round(f.y), 2);
+            }
+        }
+    }
+
+    function drawObstacle(c) {
+        if (c.type === "car") return drawCarObstacle(c);
+        if (c.type === "tree") return drawTreeObstacle(c);
+        if (c.type === "spike") return drawSpikeObstacle(c);
+        drawCactusObstacle(c);
+    }
+
+    function drawCactusObstacle(c) {
+        const x = Math.round(c.x), top = GroundY - c.height;
+        ctx.fillStyle = mixPalette("cactus");
+        ctx.fillRect(x + Math.floor(c.width/3), top, Math.floor(c.width/3), c.height);
+        const armY = top + Math.floor(c.height/3);
+        if (c.isDouble || c.isLarge) {
+            ctx.fillRect(x, armY+10, Math.floor(c.width/3)+2, 7);
+            ctx.fillRect(x, armY, 7, 17);
+        }
+        if (c.isDouble || !c.isLarge) {
+            const armX = x + Math.floor(c.width*2/3) - 2;
+            ctx.fillRect(armX, armY+17, Math.floor(c.width/3)+2, 7);
+            ctx.fillRect(armX + Math.floor(c.width/3) - 5, armY+7, 7, 17);
+        }
+        if (c.isDouble) {
+            const secondX = x + c.width - 13;
+            const secondHeight = Math.max(28, c.height - 12);
+            ctx.fillRect(secondX, GroundY - secondHeight, 9, secondHeight);
+            ctx.fillRect(secondX-7, GroundY - secondHeight + 15, 8, 6);
+            ctx.fillRect(secondX-7, GroundY - secondHeight + 8, 6, 13);
+        }
+    }
+
+    function drawCarObstacle(c) {
+        const x = Math.round(c.x), w = c.width, h = c.height;
+        const top = GroundY - h;
+        const bodyColors = ["#d9483b", "#3b7bd9", "#e8b13a"];
+        ctx.fillStyle = bodyColors[c.color % 3];
+        ctx.fillRect(x + 4, top + 10, w - 8, h - 18);
+        ctx.fillRect(x + 10, top, w - 24, 12);
+        ctx.fillStyle = "#bfe3f5";
+        ctx.fillRect(x + 13, top + 2, w - 32, 8);
+        ctx.fillStyle = "#fff3b0";
+        ctx.fillRect(x + w - 6, top + 14, 4, 5);
+        ctx.fillStyle = "#16181c";
+        ctx.fillRect(x + 7, GroundY - 10, 12, 10);
+        ctx.fillRect(x + w - 19, GroundY - 10, 12, 10);
+        ctx.fillStyle = "#8a9098";
+        ctx.fillRect(x + 11, GroundY - 7, 4, 4);
+        ctx.fillRect(x + w - 15, GroundY - 7, 4, 4);
+    }
+
+    function drawTreeObstacle(c) {
+        const x = Math.round(c.x), w = c.width, h = c.height;
+        const cx = x + w / 2;
+        ctx.fillStyle = "#6b4423";
+        ctx.fillRect(Math.round(cx - 5), GroundY - 18, 10, 18);
+        const layers = c.isLarge ? 4 : 3;
+        const tipY = GroundY - h, baseY = GroundY - 12;
+        for (let i = 0; i < layers; i++) {
+            const t = i / layers;
+            const ly = baseY + (tipY - baseY) * t;
+            const lw = (w / 2 + 5) * (1 - t * 0.7);
+            const nh = (baseY - tipY) / layers + 10;
+            ctx.fillStyle = i % 2 === 0 ? "#2e7d4f" : "#276b43";
+            ctx.beginPath();
+            ctx.moveTo(cx - lw, ly);
+            ctx.lineTo(cx, ly - nh);
+            ctx.lineTo(cx + lw, ly);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    function drawSpikeObstacle(c) {
+        const x = Math.round(c.x), w = c.width, h = c.height;
+        const top = GroundY - h;
+        ctx.fillStyle = "#1c1418";
+        const spikes = c.isDouble ? 2 : 1;
+        for (let i = 0; i < spikes; i++) {
+            const sx = x + i * (w / spikes), sw = w / spikes;
+            ctx.beginPath();
+            ctx.moveTo(sx, GroundY);
+            ctx.lineTo(sx + sw / 2, top);
+            ctx.lineTo(sx + sw, GroundY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255,110,30,0.9)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    function dinoDraw() {
+        ctx.fillStyle = mixPalette("sky");
+        ctx.fillRect(0, 0, CanvasWidth, CanvasHeight);
+
+        if (sunA > 0.02) {
+            ctx.save();
+            ctx.globalAlpha = sunA;
+            const cx = 62, cy = 58, r = 24;
+            ctx.fillStyle = "rgba(255,209,102,0.45)";
+            ctx.fillRect(cx-r-8, cy-r-8, (r+8)*2, (r+8)*2);
+            ctx.fillStyle = "#ffd166";
+            ctx.fillRect(cx-r, cy-r, r*2, r*2);
+            ctx.fillRect(cx-r-5, cy-r+5, r*2+10, r*2-10);
+            ctx.fillRect(cx-r+5, cy-r-5, r*2-10, r*2+10);
+            ctx.fillRect(cx-3, cy-r-12, 6, 8); ctx.fillRect(cx-3, cy+r+4, 6, 8);
+            ctx.fillRect(cx-r-12, cy-3, 8, 6); ctx.fillRect(cx+r+4, cy-3, 8, 6);
+            ctx.fillRect(cx-r-8, cy-r-8, 6, 6); ctx.fillRect(cx+r+2, cy-r-8, 6, 6);
+            ctx.fillRect(cx-r-8, cy+r+2, 6, 6); ctx.fillRect(cx+r+2, cy+r+2, 6, 6);
+            ctx.restore();
+        }
+
+        if (starsA > 0.02) {
+            ctx.fillStyle = "rgba(255,255,255," + (starsA * 0.9).toFixed(3) + ")";
+            const stars = [[110,40],[250,70],[390,30],[520,90],[640,45],
+                           [760,100],[840,35],[180,120],[560,55],[870,130]];
+            for (const [sx,sy] of stars) ctx.fillRect(sx, sy, 2, 2);
+        }
+
+        if (mountA > 0.02) {
+            ctx.save();
+            ctx.globalAlpha = mountA;
+            const mOff = (distance * 0.07) % 900;
+            for (const m of mtns) {
+                for (const shift of [-mOff, 900 - mOff]) {
+                    const bx = m.x + shift;
+                    if (bx + m.w < -20 || bx > CanvasWidth + 20) continue;
+                    ctx.fillStyle = "#5a6b7a";
+                    ctx.beginPath();
+                    ctx.moveTo(bx, GroundY);
+                    ctx.lineTo(bx + m.w / 2, GroundY - m.h);
+                    ctx.lineTo(bx + m.w, GroundY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = "#eef3f7";
+                    ctx.beginPath();
+                    ctx.moveTo(bx + m.w / 2 - 22, GroundY - m.h + 30);
+                    ctx.lineTo(bx + m.w / 2, GroundY - m.h);
+                    ctx.lineTo(bx + m.w / 2 + 22, GroundY - m.h + 30);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+
+        if (cityA > 0.02) {
+            ctx.save();
+            ctx.globalAlpha = cityA;
+            const bOff = (distance * 0.12) % 900;
+            for (const b of buildings) {
+                for (const shift of [-bOff, 900 - bOff]) {
+                    const bx = b.x + shift;
+                    if (bx + b.w < -20 || bx > CanvasWidth + 20) continue;
+                    ctx.fillStyle = "#2b3340";
+                    ctx.fillRect(bx, GroundY - b.h, b.w, b.h);
+                    ctx.fillStyle = "#39434f";
+                    ctx.fillRect(bx + 3, GroundY - b.h, b.w - 6, 6);
+                    ctx.fillStyle = "#ffd98a";
+                    for (let wy = GroundY - b.h + 14; wy < GroundY - 16; wy += 24) {
+                        for (let wx = bx + 8; wx < bx + b.w - 12; wx += 18) {
+                            if ((wx + wy) % 3 !== 0) ctx.fillRect(wx, wy, 7, 10);
+                        }
+                    }
+                    if (b.smoke) {
+                        ctx.fillStyle = "#3a4148";
+                        ctx.fillRect(bx + b.w - 14, GroundY - b.h - 12, 10, 14);
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+        if (hellA > 0.02) {
+            ctx.save();
+            ctx.globalAlpha = hellA * 0.6;
+            const grad = ctx.createLinearGradient(0, GroundY - 160, 0, GroundY);
+            grad.addColorStop(0, "rgba(255,40,0,0)");
+            grad.addColorStop(1, "rgba(255,70,0,0.9)");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, GroundY - 160, CanvasWidth, 160);
+            ctx.restore();
+            ctx.save();
+            ctx.globalAlpha = hellA;
+            const moonX = 770, moonY = 62;
+            ctx.fillStyle = "rgba(190,35,25,0.9)";
+            ctx.beginPath(); ctx.arc(moonX, moonY, 26, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "rgba(80,10,10,0.9)";
+            ctx.beginPath(); ctx.arc(moonX - 10, moonY - 8, 22, 0, Math.PI * 2); ctx.fill();
+            const spOff = (distance * 0.15) % 300;
+            for (let x = -300; x < CanvasWidth + 300; x += 300) {
+                const bx = x - spOff;
+                ctx.fillStyle = "#160a0a";
+                ctx.beginPath();
+                ctx.moveTo(bx, GroundY);
+                ctx.lineTo(bx + 18, GroundY - 90);
+                ctx.lineTo(bx + 30, GroundY - 50);
+                ctx.lineTo(bx + 46, GroundY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(bx + 130, GroundY);
+                ctx.lineTo(bx + 150, GroundY - 130);
+                ctx.lineTo(bx + 170, GroundY);
+                ctx.closePath();
+                ctx.fill();
+            }
+            for (const p of lavaPools) {
+                if (p.x + p.w < 0 || p.x > CanvasWidth) continue;
+                const flick = 0.75 + Math.sin(distance * 0.05 + p.x) * 0.25;
+                ctx.fillStyle = "rgba(255,110,20," + (0.9 * flick).toFixed(2) + ")";
+                ctx.fillRect(Math.round(p.x), GroundY - 5, p.w, 7);
+                ctx.fillStyle = "rgba(255,220,80," + (0.55 * flick).toFixed(2) + ")";
+                ctx.fillRect(Math.round(p.x + 6), GroundY - 4, p.w - 12, 5);
+            }
+            for (const e of embers) {
+                ctx.fillStyle = "rgba(255," + Math.round(120 + e.life * 100) + ",40," +
+                                (e.life * hellA).toFixed(2) + ")";
+                ctx.fillRect(Math.round(e.x), Math.round(e.y), 3, 3);
+            }
+            ctx.restore();
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.2, 1 - hellA * 0.6);
+        ctx.fillStyle = mixPalette("cloud");
+        for (const cloud of clouds) {
+            const x = Math.round(cloud.x), y = Math.round(cloud.y), s = cloud.scale;
+            ctx.fillRect(x+12*s, y+8*s, 42*s, 12*s);
+            ctx.fillRect(x+22*s, y, 24*s, 12*s);
+            ctx.fillRect(x, y+13*s, 66*s, 10*s);
+        }
+        ctx.restore();
+
+        if (smoke.length && cityA > 0.02) {
+            ctx.save();
+            ctx.globalAlpha = cityA;
+            for (const p of smoke) {
+                ctx.fillStyle = "rgba(180,185,195," + (0.45 * p.life).toFixed(2) + ")";
+                ctx.beginPath();
+                ctx.arc(Math.round(p.x), Math.round(p.y), p.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        if (birds.length && mountA > 0.05) {
+            ctx.save();
+            ctx.globalAlpha = mountA;
+            ctx.fillStyle = "#2a2a2e";
+            for (const bd of birds) {
+                const x = Math.round(bd.x), y = Math.round(bd.y);
+                const up = Math.floor(bd.frame) % 2 === 0;
+                if (up) {
+                    ctx.fillRect(x, y - 2, 2, 3);
+                    ctx.fillRect(x + 4, y - 2, 2, 3);
+                } else {
+                    ctx.fillRect(x, y, 2, 3);
+                    ctx.fillRect(x + 4, y, 2, 3);
+                }
+                ctx.fillRect(x + 2, y, 2, 2);
+            }
+            ctx.restore();
+        }
+
+        if (bats.length && batsA > 0.05) {
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, batsA * 1.2);
+            ctx.fillStyle = "#14161c";
+            for (const b of bats) {
+                const x = Math.round(b.x), y = Math.round(b.y);
+                const up = Math.floor(b.frame) % 2 === 0;
+                ctx.fillRect(x+7, y+4, 5, 6);
+                ctx.fillRect(x+7, y+1, 2, 3); ctx.fillRect(x+10, y+1, 2, 3);
+                if (up) { ctx.fillRect(x, y, 7, 5); ctx.fillRect(x+12, y, 7, 5); }
+                else { ctx.fillRect(x, y+6, 7, 5); ctx.fillRect(x+12, y+6, 7, 5); }
+            }
+            ctx.restore();
+        }
+
+        if (demons.length && hellA > 0.05) {
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, hellA * 1.3);
+            for (const d of demons) {
+                const f = Math.floor(d.frame) % 2 === 0 ? DEMON_A : DEMON_B;
+                drawPattern(f, DemonPal, Math.round(d.x), Math.round(d.y), 2);
+            }
+            ctx.restore();
+        }
+
+        ctx.strokeStyle = mixPalette("ground");
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, GroundY); ctx.lineTo(CanvasWidth, GroundY); ctx.stroke();
+        ctx.fillStyle = mixPalette("ui").replace("rgb(","rgba(").replace(")",", 0.4)");
+        const offset = dinoMode === "running" ? (distance % 44) : 0;
+        for (let x = -44; x < CanvasWidth; x += 44)
+            ctx.fillRect(Math.round(x - offset), GroundY + 8, 17, 2);
+
+        if (deer.length && mountA > 0.05) {
+            ctx.save();
+            ctx.globalAlpha = mountA;
+            for (const dr of deer) {
+                const f = Math.floor(dr.frame) % 2 === 0 ? DEER_A : DEER_B;
+                drawPattern(f, DeerPal, Math.round(dr.x), GroundY - 26, 2);
+            }
+            ctx.restore();
+        }
+
+        const coinFrame = Math.floor(coinSpin) % 2 === 0 ? COIN_A : COIN_B;
+        for (const m of coinItems) drawPattern(coinFrame, CoinPal, Math.round(m.x), Math.round(m.y), 2);
+
+        for (const c of cacti) drawObstacle(c);
+
+        drawBoss();
+        drawBossAttacks();
+        drawExtraHazards();
+
+        const skin = Skins[skinIndex];
+        const colors = getSkinColors();
+        let frame;
+        if (!onGround) frame = skin.frames[2];
+        else if (dinoMode === "running")
+            frame = Math.floor(runFrame/7) % 2 === 0 ? skin.frames[0] : skin.frames[1];
+        else frame = skin.frames[0];
+        drawPattern(frame, colors, DinoX + dinoExtraX, Math.round(dinoY), 2);
+
+        const text = "HI " + String(highScore).padStart(5,"0") + "   " + String(score).padStart(5,"0");
+        ctx.font = "bold 14px Consolas, monospace";
+        ctx.fillStyle = mixPalette("ui");
+        ctx.textAlign = "right";
+        ctx.fillText(text, CanvasWidth - 18, 26);
+        drawPattern(COIN_A, CoinPal, CanvasWidth - 96, 32, 1.4);
+        ctx.fillText("Монеты: " + runCoins, CanvasWidth - 18, 46);
+        ctx.textAlign = "left";
+        ctx.fillText("УРОВЕНЬ " + (level + 1), 18, 26);
+
+        if (dinoMode === "running" && gameTime < 2) {
+            ctx.font = "bold 16px Consolas, monospace";
+            ctx.fillStyle = mixPalette("ui");
+            ctx.textAlign = "center";
+            ctx.fillText("ПРОБЕЛ / ↑ — прыгать", CanvasWidth/2, CanvasHeight * 0.42);
+        }
+        if (locNoticeTimer > 0 && dinoMode === "running") {
+            ctx.font = "bold 24px Consolas, monospace";
+            ctx.textAlign = "center";
+            ctx.fillStyle = mixPalette("ui");
+            ctx.fillText(locNotice, CanvasWidth/2, 62);
+        }
+        if (bossNoticeTimer > 0 && dinoMode === "running") {
+            ctx.font = "bold 22px Consolas, monospace";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ff5b4d";
+            ctx.fillText(bossNotice, CanvasWidth/2, 92);
+            ctx.textAlign = "left";
+        }
+        if (boss && dinoMode === "running" && boss.phase !== "leave") {
+            ctx.font = "bold 13px Consolas, monospace";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#9ecbff";
+            ctx.fillText("← → — уклонение, ПРОБЕЛ — прыжок", CanvasWidth/2, 112);
+            ctx.textAlign = "left";
+        }
+    }
+
+    document.getElementById("bigPlayBtn").addEventListener("click", startDino);
+    document.getElementById("playBtn").addEventListener("click", startDino);
+    document.getElementById("againBtn").addEventListener("click", startDino);
+    document.getElementById("lobbyBtn").addEventListener("click", showLobby);
+    document.getElementById("toLobbyBtn").addEventListener("click", showLobby);
+    canvas.addEventListener("pointerdown", (e) => { e.preventDefault(); dinoJump(); });
+
+    // ══════════════════════ ЗМЕЙКА ══════════════════════
+    const sCell = 24, sGridW = 20, sGridH = 20;
+    const sStartSpeed = 7, sMaxSpeed = 14, sSpeedStep = 0.4;
+
+    const SnakeSkins = [
+        { name:"Классика", price:0,    head:"#8ce86a", body:["#5cb845","#4da53a"] },
+        { name:"Океан",    price:500,  head:"#6ab7ff", body:["#3d7fd9","#2f66b5"] },
+        { name:"Малина",   price:500,  head:"#ff8fa3", body:["#e84a6f","#c73a5a"] },
+        { name:"Аметист",  price:1000, head:"#c08ef5", body:["#8b3ff2","#6d2fc4"] },
+        { name:"Золото",   price:1000, head:"#ffd166", body:["#e5a833","#c98d1f"] },
+        { name:"Лёд",      price:1000, head:"#bff0fa", body:["#7fd8ee","#5cb7cc"] },
+        { name:"Огонь",    price:2000, head:"#ffcf6b", body:["#ff7a2f","#d94f1e"] },
+        { name:"Радуга",   price:3000, head:"#ffffff", body:"rainbow" }
+    ];
+
+    const snakeCanvas = document.getElementById("snakeCanvas");
+    const ctxS = snakeCanvas.getContext("2d");
+    const snakeInfoEl = document.getElementById("snakeInfo");
+    const snakeOverPanel = document.getElementById("snakeOverPanel");
+    const snakeOverStats = document.getElementById("snakeOverStats");
+    const snakeShop = document.getElementById("snakeShop");
+    const snakeSkinList = document.getElementById("snakeSkinList");
+
+    let sSnake = [], sDir = "right", sPend = "right";
+    let sApple = { x: 10, y: 10 };
+    let sScore = 0, sSpeed = sStartSpeed, sStepTimer = 0, sEatPulse = 0;
+    let sMode = "playing";
+    let sHigh = 0, sDeaths = 0, snakeSkinIndex = 0, ownedSnake = [0];
+    try {
+        sHigh = parseInt(localStorage.getItem("snakeHighScore"), 10) || 0;
+        sDeaths = parseInt(localStorage.getItem("snakeDeaths"), 10) || 0;
+        snakeSkinIndex = parseInt(localStorage.getItem("snakeSkin"), 10) || 0;
+        ownedSnake = JSON.parse(localStorage.getItem("snakeOwnedSkins") || "[0]");
+    } catch (e) {}
+    if (snakeSkinIndex < 0 || snakeSkinIndex >= SnakeSkins.length) snakeSkinIndex = 0;
+    if (!Array.isArray(ownedSnake) || ownedSnake.length === 0) ownedSnake = [0];
+
+    function saveSnakeSkin() {
+        try {
+            localStorage.setItem("snakeSkin", String(snakeSkinIndex));
+            localStorage.setItem("snakeOwnedSkins", JSON.stringify(ownedSnake));
+        } catch (e) {}
+    }
+    function sSave() {
+        try {
+            localStorage.setItem("snakeHighScore", String(sHigh));
+            localStorage.setItem("snakeDeaths", String(sDeaths));
+        } catch (e) {}
+    }
+    function sUpdateInfo() {
+        snakeInfoEl.textContent = "Очки: " + sScore + "  •  Рекорд: " + sHigh +
+            "  •  Смертей: " + sDeaths;
+    }
+
+    function renderSnakeShop() {
+        updateCoinsUI();
+        snakeSkinList.innerHTML = "";
+        SnakeSkins.forEach((skin, i) => {
+            const isOwned = ownedSnake.includes(i);
+            const isSelected = i === snakeSkinIndex;
+            const row = document.createElement("div");
+            row.className = "skin-row" + (isOwned ? " owned" : "") + (isSelected ? " selected" : "");
+            const swatch = document.createElement("span");
+            swatch.className = "skin-swatch";
+            swatch.style.background = skin.body === "rainbow"
+                ? "linear-gradient(135deg, #ff5b5b, #ffd166, #5cb845, #3b7bd9)"
+                : skin.head;
+            const name = document.createElement("span");
+            name.className = "skin-name";
+            name.textContent = skin.name;
+            row.appendChild(swatch); row.appendChild(name);
+            const btn = document.createElement("button");
+            if (isOwned) {
+                const price = document.createElement("span");
+                price.className = "skin-price";
+                price.textContent = "куплён";
+                row.appendChild(price);
+                if (isSelected) { btn.className = "btn"; btn.textContent = "Выбран"; btn.disabled = true; }
+                else {
+                    btn.className = "btn select"; btn.textContent = "Выбрать";
+                    btn.addEventListener("click", () => { snakeSkinIndex = i; saveSnakeSkin(); renderSnakeShop(); });
+                }
+                row.appendChild(btn);
+            } else {
+                const price = document.createElement("span");
+                price.className = "skin-price";
+                price.textContent = skin.price + " монет";
+                row.appendChild(price);
+                btn.className = "btn buy"; btn.textContent = "Купить";
+                if (coins < skin.price) btn.disabled = true;
+                btn.addEventListener("click", () => {
+                    if (coins >= skin.price && !ownedSnake.includes(i)) {
+                        coins -= skin.price; ownedSnake.push(i); snakeSkinIndex = i;
+                        saveSnakeSkin(); updateCoinsUI(); renderSnakeShop();
+                    }
+                });
+                row.appendChild(btn);
+            }
+            snakeSkinList.appendChild(row);
+        });
+    }
+
+    document.getElementById("snakeShopBtn").addEventListener("click", () => {
+        if (sMode === "playing") sMode = "paused";
+        renderSnakeShop();
+        snakeShop.classList.remove("hidden");
+    });
+    document.getElementById("snakeShopClose").addEventListener("click", () => {
+        snakeShop.classList.add("hidden");
+        if (sMode === "paused") sMode = "playing";
+    });
+
+    function sPlaceApple() {
+        let x, y;
+        do {
+            x = random(0, sGridW); y = random(0, sGridH);
+        } while (sSnake.some(s => s.x === x && s.y === y));
+        sApple.x = x; sApple.y = y;
+    }
+    function sReset() {
+        sSnake = [{x:8,y:10},{x:7,y:10},{x:6,y:10}];
+        sDir = "right"; sPend = "right";
+        sScore = 0; sSpeed = sStartSpeed; sStepTimer = 0; sEatPulse = 0;
+        sMode = "playing";
+        snakeShop.classList.add("hidden");
+        sPlaceApple(); sUpdateInfo();
+        snakeOverPanel.classList.add("hidden");
+    }
+    function sSetDirection(dir) {
+        const opposite = { up:"down", down:"up", left:"right", right:"left" };
+        if (dir !== opposite[sDir]) sPend = dir;
+    }
+    function sStep() {
+        sDir = sPend;
+        const head = sSnake[0];
+        let nx = head.x, ny = head.y;
+        if (sDir === "up") ny -= 1;
+        if (sDir === "down") ny += 1;
+        if (sDir === "left") nx -= 1;
+        if (sDir === "right") nx += 1;
+        if (nx < 0 || nx >= sGridW || ny < 0 || ny >= sGridH) { sEnd(); return; }
+        const willEat = (nx === sApple.x && ny === sApple.y);
+        const body = willEat ? sSnake : sSnake.slice(0, -1);
+        if (body.some(s => s.x === nx && s.y === ny)) { sEnd(); return; }
+        sSnake.unshift({ x: nx, y: ny });
+        if (willEat) {
+            sScore++; sEatPulse = 1;
+            sSpeed = Math.min(sMaxSpeed, sSpeed + sSpeedStep);
+            if (sScore > sHigh) sHigh = sScore;
+            sPlaceApple(); sUpdateInfo();
+        } else sSnake.pop();
+    }
+    function sEnd() {
+        sMode = "over";
+        sDeaths++;
+        const earned = Math.floor(sScore / 2);
+        coins += earned;
+        sSave();
+        updateCoinsUI();
+        snakeOverStats.textContent =
+            "Очки: " + sScore + "\nРекорд: " + sHigh + "\nДлина змейки: " + sSnake.length +
+            "\nСмертей за всё время: " + sDeaths + "\nПолучено монет: +" + earned;
+        snakeOverPanel.classList.remove("hidden");
+    }
+    function snakeUpdate(dt) {
+        if (sEatPulse > 0) sEatPulse = Math.max(0, sEatPulse - dt * 3);
+        if (sMode !== "playing") return;
+        sStepTimer += dt;
+        const interval = 1 / sSpeed;
+        while (sStepTimer >= interval) {
+            sStepTimer -= interval;
+            sStep();
+            if (sMode !== "playing") break;
+        }
+    }
+    function sRoundRect(x, y, w, h, r) {
+        ctxS.beginPath();
+        ctxS.moveTo(x + r, y);
+        ctxS.arcTo(x + w, y, x + w, y + h, r);
+        ctxS.arcTo(x + w, y + h, x, y + h, r);
+        ctxS.arcTo(x, y + h, x, y, r);
+        ctxS.arcTo(x, y, x + w, y, r);
+        ctxS.closePath();
+    }
+    function snakeDraw() {
+        for (let gy = 0; gy < sGridH; gy++)
+            for (let gx = 0; gx < sGridW; gx++) {
+                ctxS.fillStyle = (gx + gy) % 2 === 0 ? "#101722" : "#0d1117";
+                ctxS.fillRect(gx*sCell, gy*sCell, sCell, sCell);
+            }
+        const ax = sApple.x*sCell + sCell/2, ay = sApple.y*sCell + sCell/2;
+        const ar = sCell*0.36 + sEatPulse*3;
+        ctxS.fillStyle = "#e8433f";
+        ctxS.beginPath(); ctxS.arc(ax, ay+1, ar, 0, Math.PI*2); ctxS.fill();
+        ctxS.fillStyle = "rgba(255,255,255,0.45)";
+        ctxS.beginPath(); ctxS.arc(ax - ar*0.35, ay - ar*0.35, ar*0.28, 0, Math.PI*2); ctxS.fill();
+        ctxS.strokeStyle = "#7a4a21"; ctxS.lineWidth = 2;
+        ctxS.beginPath(); ctxS.moveTo(ax, ay - ar); ctxS.lineTo(ax+1, ay - ar - 5); ctxS.stroke();
+        ctxS.fillStyle = "#5cb85c";
+        ctxS.beginPath(); ctxS.ellipse(ax+5, ay - ar - 3, 4, 2.2, -0.5, 0, Math.PI*2); ctxS.fill();
+        const sk = SnakeSkins[snakeSkinIndex];
+        for (let i = sSnake.length - 1; i >= 0; i--) {
+            const s = sSnake[i];
+            const x = s.x*sCell, y = s.y*sCell, pad = i === 0 ? 1 : 2;
+            if (sk.body === "rainbow") {
+                const hue = (i * 26 + Math.floor(sEatPulse * 60)) % 360;
+                ctxS.fillStyle = "hsl(" + hue + ", 85%, " + (i === 0 ? 66 : 55) + "%)";
+            } else {
+                ctxS.fillStyle = i === 0 ? sk.head : (i % 2 === 0 ? sk.body[0] : sk.body[1]);
+            }
+            sRoundRect(x+pad, y+pad, sCell - pad*2, sCell - pad*2, 6);
+            ctxS.fill();
+        }
+        const head = sSnake[0];
+        const hx = head.x*sCell, hy = head.y*sCell;
+        ctxS.fillStyle = "#0d1117";
+        const eo = 6;
+        if (sDir === "right" || sDir === "left") {
+            const ex = sDir === "right" ? hx + sCell - eo - 3 : hx + eo;
+            ctxS.fillRect(ex, hy+6, 3, 3);
+            ctxS.fillRect(ex, hy + sCell - 9, 3, 3);
+        } else {
+            const ey = sDir === "down" ? hy + sCell - eo - 3 : hy + eo;
+            ctxS.fillRect(hx+6, ey, 3, 3);
+            ctxS.fillRect(hx + sCell - 9, ey, 3, 3);
+        }
+    }
+
+    document.getElementById("snakeAgainBtn").addEventListener("click", sReset);
+    document.querySelectorAll(".ctl-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (sMode === "over") { sReset(); return; }
+            if (sMode !== "playing") return;
+            sSetDirection(btn.dataset.dir);
+        });
+    });
+    let touchStartX = 0, touchStartY = 0;
+    snakeCanvas.addEventListener("pointerdown", (e) => {
+        touchStartX = e.clientX; touchStartY = e.clientY;
+    });
+    snakeCanvas.addEventListener("pointerup", (e) => {
+        if (sMode !== "playing") return;
+        const dx = e.clientX - touchStartX, dy = e.clientY - touchStartY;
+        if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+        if (Math.abs(dx) > Math.abs(dy)) sSetDirection(dx > 0 ? "right" : "left");
+        else sSetDirection(dy > 0 ? "down" : "up");
+    });
+
+    // ══════════════════════ КОСМИЧЕСКИЙ СБОРЩИК ══════════════════════
+    const SpaceW = 800, SpaceH = 600;
+    const ShipX = 110;
+    const SpaceBaseSpeed = 280, SpaceMaxSpeed = 640;
+
+    const SpaceSkins = [
+        { name:"Классика", price:0,    body:"#c9ccd4", glow:"#8892a8", flame:"#ffd166" },
+        { name:"Комета",   price:1000, body:"#ff7a2f", glow:"#ffb06b", flame:"#ffe08a" },
+        { name:"Призрак",  price:2000, body:"#7fd8ee", glow:"#bff0fa", flame:"#d9f6ff" },
+        { name:"Титан",    price:3000, body:"#5cb845", glow:"#8ce86a", flame:"#e9ffb0" }
+    ];
+
+    const spaceCanvas = document.getElementById("spaceCanvas");
+    const ctxSp = spaceCanvas.getContext("2d");
+    const spaceInfoEl = document.getElementById("spaceInfo");
+    const spaceOverPanel = document.getElementById("spaceOverPanel");
+    const spaceOverStats = document.getElementById("spaceOverStats");
+    const spaceShop = document.getElementById("spaceShop");
+    const spaceSkinList = document.getElementById("spaceSkinList");
+
+    let spaceHigh = 0, spaceDeaths = 0, spaceSkinIndex = 0, ownedSpace = [0];
+    try {
+        spaceHigh = parseInt(localStorage.getItem("spaceHighScore"), 10) || 0;
+        spaceDeaths = parseInt(localStorage.getItem("spaceDeaths"), 10) || 0;
+        spaceSkinIndex = parseInt(localStorage.getItem("spaceSkin"), 10) || 0;
+        ownedSpace = JSON.parse(localStorage.getItem("spaceOwnedSkins") || "[0]");
+    } catch (e) {}
+    if (spaceSkinIndex < 0 || spaceSkinIndex >= SpaceSkins.length) spaceSkinIndex = 0;
+    if (!Array.isArray(ownedSpace) || ownedSpace.length === 0) ownedSpace = [0];
+
+    function saveSpace() {
+        try {
+            localStorage.setItem("spaceHighScore", String(spaceHigh));
+            localStorage.setItem("spaceDeaths", String(spaceDeaths));
+            localStorage.setItem("spaceSkin", String(spaceSkinIndex));
+            localStorage.setItem("spaceOwnedSkins", JSON.stringify(ownedSpace));
+        } catch (e) {}
+    }
+
+    let spaceMode = "idle";
+    let shipY = SpaceH / 2, shipMove = 0;
+    let spaceScore = 0, spaceSpeed = SpaceBaseSpeed;
+    let asteroids = [], crystals = [], stars = [];
+    let asteroidTimer = 1.0, crystalTimer = 0.8, spaceRunCoins = 0, spaceTime = 0;
+
+    function spaceUpdateInfo() {
+        spaceInfoEl.textContent = "Очки: " + spaceScore + "  •  Рекорд: " + spaceHigh +
+            "  •  Смертей: " + spaceDeaths;
+    }
+
+    function spaceReset() {
+        shipY = SpaceH / 2; shipMove = 0;
+        spaceScore = 0; spaceSpeed = SpaceBaseSpeed;
+        asteroids = []; crystals = []; spaceRunCoins = 0; spaceTime = 0;
+        asteroidTimer = 1.2; crystalTimer = 0.6;
+        stars = [];
+        for (let i = 0; i < 60; i++) {
+            stars.push({ x: random(0, SpaceW), y: random(0, SpaceH),
+                         depth: 0.3 + Math.random() * 0.7 });
+        }
+        spaceMode = "idle";
+        spaceOverPanel.classList.add("hidden");
+        spaceUpdateInfo();
+    }
+
+    function spaceStart() {
+        spaceReset();
+        spaceMode = "playing";
+    }
+
+    function spaceEnd() {
+        spaceMode = "over";
+        spaceDeaths++;
+        if (spaceScore > spaceHigh) spaceHigh = spaceScore;
+        const fromPoints = Math.floor(spaceScore / 3);
+        coins += fromPoints + spaceRunCoins;
+        saveSpace();
+        updateCoinsUI();
+        spaceOverStats.textContent =
+            "Очки: " + spaceScore + "\nРекорд: " + spaceHigh +
+            "\nСмертей за всё время: " + spaceDeaths +
+            "\nКристаллов собрано: " + spaceRunCoins +
+            "\nЗа очки: +" + fromPoints + " монет\nВсего монет: " + coins;
+        spaceOverPanel.classList.remove("hidden");
+    }
+
+    function shipBox() {
+        return { x: ShipX - 14, y: shipY - 14, w: 46, h: 28 };
+    }
+    function overlap(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function spaceUpdate(dt) {
+        if (spaceMode !== "playing") return;
+        spaceTime += dt;
+        spaceSpeed = Math.min(SpaceMaxSpeed, SpaceBaseSpeed + spaceTime * 9);
+        spaceScore = Math.floor(spaceTime * 4);
+        if (spaceScore > spaceHigh) spaceHigh = spaceScore;
+        spaceUpdateInfo();
+
+        shipY += shipMove * 320 * dt;
+        shipY = Math.max(20, Math.min(SpaceH - 20, shipY));
+
+        for (const st of stars) {
+            st.x -= spaceSpeed * st.depth * dt;
+            if (st.x < -3) { st.x = SpaceW + random(0, 40); st.y = random(0, SpaceH); }
+        }
+
+        asteroidTimer -= dt;
+        if (asteroidTimer <= 0) {
+            asteroids.push({ x: SpaceW + 40, y: random(30, SpaceH - 30),
+                             r: random(14, 34), spin: Math.random() * 6, rot: 0 });
+            asteroidTimer = random(0.5, Math.max(0.55, 1.4 - spaceTime * 0.012));
+        }
+        for (let i = asteroids.length - 1; i >= 0; i--) {
+            const a = asteroids[i];
+            a.x -= spaceSpeed * dt;
+            a.rot += a.spin * dt;
+            if (a.x < -50) { asteroids.splice(i, 1); continue; }
+            if (overlap(shipBox(), { x: a.x - a.r + 6, y: a.y - a.r + 6,
+                                     w: (a.r - 6) * 2, h: (a.r - 6) * 2 })) {
+                spaceEnd();
+                return;
+            }
+        }
+
+        crystalTimer -= dt;
+        if (crystalTimer <= 0) {
+            crystals.push({ x: SpaceW + 30, y: random(30, SpaceH - 30), rot: 0 });
+            crystalTimer = random(0.9, 2.0);
+        }
+        for (let i = crystals.length - 1; i >= 0; i--) {
+            const c = crystals[i];
+            c.x -= spaceSpeed * dt;
+            c.rot += dt * 4;
+            if (c.x < -30) { crystals.splice(i, 1); continue; }
+            if (overlap(shipBox(), { x: c.x - 12, y: c.y - 12, w: 24, h: 24 })) {
+                crystals.splice(i, 1);
+                spaceRunCoins++;
+                spaceUpdateInfo();
+            }
+        }
+    }
+
+    function drawSpaceShip(x, y, sk) {
+        ctxSp.fillStyle = sk.flame;
+        ctxSp.fillRect(x - 18, y - 3, 12, 6);
+        ctxSp.fillStyle = sk.body;
+        ctxSp.beginPath();
+        ctxSp.moveTo(x, y - 16);
+        ctxSp.lineTo(x + 30, y);
+        ctxSp.lineTo(x, y + 16);
+        ctxSp.closePath();
+        ctxSp.fill();
+        ctxSp.fillStyle = sk.glow;
+        ctxSp.fillRect(x + 8, y - 4, 9, 8);
+    }
+
+    function spaceDraw() {
+        ctxSp.fillStyle = "#050510";
+        ctxSp.fillRect(0, 0, SpaceW, SpaceH);
+        ctxSp.fillStyle = "#5a6380";
+        for (const st of stars) ctxSp.fillRect(Math.round(st.x), Math.round(st.y), 2, 2);
+
+        ctxSp.fillStyle = "#6b7078";
+        for (const a of asteroids) {
+            ctxSp.save();
+            ctxSp.translate(a.x, a.y);
+            ctxSp.rotate(a.rot);
+            ctxSp.beginPath();
+            ctxSp.moveTo(-a.r, 0);
+            ctxSp.lineTo(-a.r * 0.4, -a.r * 0.8);
+            ctxSp.lineTo(a.r * 0.5, -a.r);
+            ctxSp.lineTo(a.r, 0);
+            ctxSp.lineTo(a.r * 0.4, a.r * 0.8);
+            ctxSp.lineTo(-a.r * 0.5, a.r);
+            ctxSp.closePath();
+            ctxSp.fill();
+            ctxSp.fillStyle = "#3f444c";
+            ctxSp.fillRect(-a.r * 0.4, -a.r * 0.3, a.r * 0.5, a.r * 0.5);
+            ctxSp.restore();
+        }
+
+        for (const c of crystals) {
+            ctxSp.save();
+            ctxSp.translate(c.x, c.y);
+            ctxSp.rotate(c.rot);
+            ctxSp.fillStyle = "#4de3d9";
+            ctxSp.beginPath();
+            ctxSp.moveTo(0, -12);
+            ctxSp.lineTo(9, 0);
+            ctxSp.lineTo(0, 12);
+            ctxSp.lineTo(-9, 0);
+            ctxSp.closePath();
+            ctxSp.fill();
+            ctxSp.fillStyle = "#bffef8";
+            ctxSp.fillRect(-3, -6, 4, 8);
+            ctxSp.restore();
+        }
+
+        if (spaceMode === "playing" || spaceMode === "over") {
+            drawSpaceShip(ShipX, shipY, SpaceSkins[spaceSkinIndex]);
+        }
+
+        ctxSp.font = "bold 16px Consolas, monospace";
+        ctxSp.fillStyle = "#9ecbff";
+        ctxSp.textAlign = "right";
+        ctxSp.fillText("Очки: " + spaceScore, SpaceW - 16, 28);
+        ctxSp.fillStyle = "#4de3d9";
+        ctxSp.fillText("Кристаллы: " + spaceRunCoins, SpaceW - 16, 50);
+        ctxSp.textAlign = "left";
+
+        if (spaceMode === "idle") {
+            ctxSp.font = "bold 22px Consolas, monospace";
+            ctxSp.textAlign = "center";
+            ctxSp.fillStyle = "#ffffff";
+            ctxSp.fillText("Нажми «СТАРТ»", SpaceW / 2, SpaceH / 2 - 10);
+            ctxSp.font = "bold 15px Consolas, monospace";
+            ctxSp.fillStyle = "#9ecbff";
+            ctxSp.fillText("↑ ↓ — манёвр", SpaceW / 2, SpaceH / 2 + 20);
+            ctxSp.textAlign = "left";
+        }
+    }
+
+    document.getElementById("spaceStartBtn").addEventListener("click", spaceStart);
+    document.getElementById("spaceAgainBtn").addEventListener("click", spaceStart);
+    document.getElementById("spaceShopBtn").addEventListener("click", () => {
+        if (spaceMode === "playing") spaceMode = "paused";
+        renderSpaceShop();
+        spaceShop.classList.remove("hidden");
+    });
+    document.getElementById("spaceShopClose").addEventListener("click", () => {
+        spaceShop.classList.add("hidden");
+        if (spaceMode === "paused") spaceMode = "playing";
+    });
+
+    function renderSpaceShop() {
+        updateCoinsUI();
+        spaceSkinList.innerHTML = "";
+        SpaceSkins.forEach((skin, i) => {
+            const isOwned = ownedSpace.includes(i);
+            const isSelected = i === spaceSkinIndex;
+            const row = document.createElement("div");
+            row.className = "skin-row" + (isOwned ? " owned" : "") + (isSelected ? " selected" : "");
+            const swatch = document.createElement("span");
+            swatch.className = "skin-swatch";
+            swatch.style.background = skin.body;
+            const name = document.createElement("span");
+            name.className = "skin-name";
+            name.textContent = skin.name;
+            row.appendChild(swatch); row.appendChild(name);
+            const btn = document.createElement("button");
+            if (isOwned) {
+                const price = document.createElement("span");
+                price.className = "skin-price";
+                price.textContent = "куплён";
+                row.appendChild(price);
+                if (isSelected) { btn.className = "btn"; btn.textContent = "Выбран"; btn.disabled = true; }
+                else {
+                    btn.className = "btn select"; btn.textContent = "Выбрать";
+                    btn.addEventListener("click", () => { spaceSkinIndex = i; saveSpace(); renderSpaceShop(); });
+                }
+                row.appendChild(btn);
+            } else {
+                const price = document.createElement("span");
+                price.className = "skin-price";
+                price.textContent = skin.price + " монет";
+                row.appendChild(price);
+                btn.className = "btn buy"; btn.textContent = "Купить";
+                if (coins < skin.price) btn.disabled = true;
+                btn.addEventListener("click", () => {
+                    if (coins >= skin.price && !ownedSpace.includes(i)) {
+                        coins -= skin.price; ownedSpace.push(i); spaceSkinIndex = i;
+                        saveSpace(); updateCoinsUI(); renderSpaceShop();
+                    }
+                });
+                row.appendChild(btn);
+            }
+            spaceSkinList.appendChild(row);
+        });
+    }
+
+    // ══════════════════════ КЛАВИАТУРА И ЦИКЛ ══════════════════════
+    window.addEventListener("keydown", (e) => {
+        if (currentGame === "dino") {
+            if (e.code === "Space" || e.code === "ArrowUp") {
+                e.preventDefault();
+                if (!e.repeat) dinoJump();
+            }
+            if (e.code === "ArrowLeft" || e.code === "KeyA") { e.preventDefault(); moveLeft = true; }
+            if (e.code === "ArrowRight" || e.code === "KeyD") { e.preventDefault(); moveRight = true; }
+        }
+        if (currentGame === "snake") {
+            if (!snakeShop.classList.contains("hidden")) return;
+            const keys = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right",
+                           KeyW:"up", KeyS:"down", KeyA:"left", KeyD:"right" };
+            if (keys[e.code] && sMode === "playing") { e.preventDefault(); sSetDirection(keys[e.code]); }
+            else if (e.code === "Space" && sMode === "over") { e.preventDefault(); sReset(); }
+        }
+        if (currentGame === "space") {
+            if (e.code === "ArrowUp" || e.code === "KeyW") {
+                e.preventDefault(); shipMove = -1;
+                if (spaceMode === "idle") spaceStart();
+            }
+            if (e.code === "ArrowDown" || e.code === "KeyS") {
+                e.preventDefault(); shipMove = 1;
+                if (spaceMode === "idle") spaceStart();
+            }
+        }
+    });
+    window.addEventListener("keyup", (e) => {
+        if (currentGame === "dino") {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") moveLeft = false;
+            if (e.code === "ArrowRight" || e.code === "KeyD") moveRight = false;
+        }
+        if (currentGame === "space") {
+            if ((e.code === "ArrowUp" || e.code === "KeyW") && shipMove === -1) shipMove = 0;
+            if ((e.code === "ArrowDown" || e.code === "KeyS") && shipMove === 1) shipMove = 0;
+        }
+    });
+    spaceCanvas.addEventListener("pointerdown", () => {
+        if (spaceMode === "idle") spaceStart();
+    });
+    spaceCanvas.addEventListener("pointermove", (e) => {
+        if (spaceMode !== "playing") return;
+        const rect = spaceCanvas.getBoundingClientRect();
+        const py = (e.clientY - rect.top) * (SpaceH / rect.height);
+        shipY = Math.max(20, Math.min(SpaceH - 20, py));
+    });
+
+    let lastTime = performance.now();
+    function loop(now) {
+        const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
+        lastTime = now;
+        if (currentGame === "dino") { dinoUpdate(dt); dinoDraw(); }
+        else if (currentGame === "snake") { snakeUpdate(dt); snakeDraw(); }
+        else if (currentGame === "space") { spaceUpdate(dt); spaceDraw(); }
+        requestAnimationFrame(loop);
+    }
+
+    setPaletteInstant(LOCATIONS[0]);
+    spaceReset();
+    showMenu();
+    requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
+
